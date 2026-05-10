@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.mp.wig3003groupproject.MainController"
+            style="-fx-background-color: #FAF9F6;">
+
+    <center>
+        <StackPane fx:id="centerStack">
+            <ScrollPane fx:id="imageScrollPane" visible="false" fitToWidth="true" fitToHeight="true"
+                        style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent;">
+                <StackPane alignment="CENTER">
+                    <ImageView fx:id="mainImageView" preserveRatio="true" />
+                </StackPane>
+            </ScrollPane>
+
+            <VBox fx:id="uploadPlaceholder" alignment="CENTER" spacing="20">
+                <Button onAction="#handleOpenImage"
+                        style="-fx-background-color: #B8E1FF; -fx-background-radius: 80; -fx-min-width: 160; -fx-min-height: 160; -fx-font-size: 60; -fx-text-fill: white; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);"
+                        text="+"/>
+                <Label text="Upload a Photo" style="-fx-font-size: 18; -fx-text-fill: #A0A0A0; -fx-font-weight: bold;"/>
+            </VBox>
+
+            <Label fx:id="heartIcon" text="❤" visible="false" mouseTransparent="true"
+                   StackPane.alignment="TOP_RIGHT"
+                   style="-fx-font-size: 80; -fx-padding: 40; -fx-text-fill: #dfe6e9; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0.5, 0, 0);"/>
+        </StackPane>
+    </center>
+
+    <right>
+        <fx:include source="dip-view.fxml"/>
+    </right>
+</BorderPane>

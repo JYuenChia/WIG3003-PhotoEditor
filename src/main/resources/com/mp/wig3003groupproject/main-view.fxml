@@ -4,32 +4,276 @@
 <?import javafx.scene.layout.*?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:id="rootPane"
             fx:controller="com.mp.wig3003groupproject.MainController"
-            style="-fx-background-color: #FAF9F6;">
+            style="-fx-background-color: #FFFFFF; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif;">
 
+    <!-- ===== TOP TOOLBAR ===== -->
+    <top>
+        <HBox fx:id="toolbarHBox" spacing="2" alignment="CENTER_LEFT"
+              style="-fx-background-color: #BFDFFF; -fx-padding: 6 16; -fx-border-color: #D0E8FF; -fx-border-width: 0 0 1 0;">
+
+            <!-- File Menu -->
+            <MenuButton text="📁  File" style="-fx-background-color: #A9D6FF; -fx-text-fill: #4A4A4A; -fx-background-radius: 6; -fx-border-color: #D0E8FF; -fx-border-radius: 6; -fx-font-size: 13; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-padding: 6 14;">
+                <items>
+                    <MenuItem text="📂  Open Image"   onAction="#handleOpenImage"/>
+                    <MenuItem text="⬆  Upload Image"  onAction="#handleUploadImage"/>
+                    <MenuItem text="💾  Save"          onAction="#handleSave"/>
+                    <MenuItem text="📤  Import"        onAction="#handleImport"/>
+                </items>
+            </MenuButton>
+
+            <!-- Edit Menu -->
+            <MenuButton text="✏  Edit" style="-fx-background-color: #A9D6FF; -fx-text-fill: #4A4A4A; -fx-background-radius: 6; -fx-border-color: #D0E8FF; -fx-border-radius: 6; -fx-font-size: 13; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-padding: 6 14;">
+                <items>
+                    <MenuItem text="↩  Undo"   onAction="#handleUndo"/>
+                    <MenuItem text="↪  Redo"   onAction="#handleRedo"/>
+                    <MenuItem text="🗑  Delete" onAction="#handleDelete"/>
+                </items>
+            </MenuButton>
+
+            <!-- Quick Tools Menu -->
+            <MenuButton text="⚡  Quick Tools" style="-fx-background-color: #A9D6FF; -fx-text-fill: #4A4A4A; -fx-background-radius: 6; -fx-border-color: #D0E8FF; -fx-border-radius: 6; -fx-font-size: 13; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-padding: 6 14;">
+                <items>
+                    <MenuItem text="⊕  Zoom In"     onAction="#handleZoomIn"/>
+                    <MenuItem text="⊖  Zoom Out"    onAction="#handleZoomOut"/>
+                    <MenuItem text="⛶  Fullscreen"  onAction="#handleFullscreen"/>
+                </items>
+            </MenuButton>
+
+            <!-- Search bar inline with Quick Tools -->
+            <TextField fx:id="searchBar" promptText="🔍  Search..." prefWidth="160" prefHeight="32"
+                       onAction="#handleSearch"
+                       style="-fx-background-radius: 6; -fx-font-size: 12; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-padding: 4 10;"/>
+
+            <!-- Share Menu -->
+            <MenuButton text="📤  Share" style="-fx-background-color: #9DCCFF; -fx-text-fill: #4A4A4A; -fx-background-radius: 6; -fx-border-color: #D0E8FF; -fx-border-radius: 6; -fx-font-size: 13; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-padding: 6 14;">
+                <items>
+                    <MenuItem text="📧  Email"     onAction="#handleShareEmail"/>
+                    <MenuItem text="💬  WhatsApp"  onAction="#handleShareWhatsApp"/>
+                </items>
+            </MenuButton>
+
+            <!-- Settings Menu -->
+            <MenuButton fx:id="darkModeBtn" text="⚙  Settings" style="-fx-background-color: #A9D6FF; -fx-text-fill: #4A4A4A; -fx-background-radius: 6; -fx-border-color: #D0E8FF; -fx-border-radius: 6; -fx-font-size: 13; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-padding: 6 14;">
+                <items>
+                    <MenuItem text="🌙  Dark / Light Mode" onAction="#handleToggleDarkMode"/>
+                    <MenuItem text="👤  User Profile"       onAction="#handleUserProfile"/>
+                    <MenuItem text="⚙  Settings"           onAction="#handleSettings"/>
+                </items>
+            </MenuButton>
+
+        </HBox>
+    </top>
+
+    <!-- ===== LEFT SIDEBAR ===== -->
+    <left>
+        <VBox fx:id="sidebarVBox" spacing="4" style="-fx-background-color: #BFDFFF; -fx-padding: 10 6; -fx-min-width: 130; -fx-pref-width: 130; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif;">
+            <fx:define>
+                <ToggleGroup fx:id="sidebarGroup"/>
+            </fx:define>
+            <!-- Collapse/expand toggle -->
+            <Button text="&#9776;" onAction="#handleSidebarToggle" maxWidth="Infinity"
+                    style="-fx-background-color: transparent; -fx-font-size: 18; -fx-text-fill: #4A4A4A; -fx-padding: 2 0 6 0; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif;"/>
+            <ToggleButton fx:id="tabDashboard" text="🏠&#10;Dashboard" toggleGroup="$sidebarGroup"
+                          onAction="#showDashboard" selected="true" maxWidth="Infinity"
+                          wrapText="true" textAlignment="CENTER"
+                              style="-fx-background-color: #6FBAFF; -fx-text-fill: #4A4A4A; -fx-background-radius: 8; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-font-size: 11; -fx-padding: 8 4; -fx-alignment: CENTER;"/>
+            <ToggleButton fx:id="tabGallery" text="🖼&#10;Gallery" toggleGroup="$sidebarGroup"
+                          onAction="#showGallery" maxWidth="Infinity"
+                          wrapText="true" textAlignment="CENTER"
+                              style="-fx-background-color: transparent; -fx-text-fill: #4A4A4A; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 8; -fx-font-size: 11; -fx-padding: 8 4; -fx-alignment: CENTER;"/>
+            <ToggleButton fx:id="tabDipEditor" text="🎨&#10;DIP Editor" toggleGroup="$sidebarGroup"
+                          onAction="#showDipEditor" maxWidth="Infinity"
+                          wrapText="true" textAlignment="CENTER"
+                              style="-fx-background-color: transparent; -fx-text-fill: #4A4A4A; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 8; -fx-font-size: 11; -fx-padding: 8 4; -fx-alignment: CENTER;"/>
+            <ToggleButton fx:id="tabAnnotation" text="✏&#10;Annotation" toggleGroup="$sidebarGroup"
+                          onAction="#showAnnotation" maxWidth="Infinity"
+                          wrapText="true" textAlignment="CENTER"
+                              style="-fx-background-color: transparent; -fx-text-fill: #4A4A4A; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 8; -fx-font-size: 11; -fx-padding: 8 4; -fx-alignment: CENTER;"/>
+            <ToggleButton fx:id="tabFavorites" text="⭐&#10;Favorites" toggleGroup="$sidebarGroup"
+                          onAction="#showFavorites" maxWidth="Infinity"
+                          wrapText="true" textAlignment="CENTER"
+                              style="-fx-background-color: transparent; -fx-text-fill: #4A4A4A; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 8; -fx-font-size: 11; -fx-padding: 8 4; -fx-alignment: CENTER;"/>
+            <ToggleButton fx:id="tabObjectExtraction" text="✂&#10;Object&#10;Extraction" toggleGroup="$sidebarGroup"
+                          onAction="#showObjectExtraction" maxWidth="Infinity"
+                          wrapText="true" textAlignment="CENTER"
+                              style="-fx-background-color: transparent; -fx-text-fill: #4A4A4A; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 8; -fx-font-size: 11; -fx-padding: 8 4; -fx-alignment: CENTER;"/>
+            <ToggleButton fx:id="tabMosaic" text="🔲&#10;Mosaic" toggleGroup="$sidebarGroup"
+                          onAction="#showMosaic" maxWidth="Infinity"
+                          wrapText="true" textAlignment="CENTER"
+                              style="-fx-background-color: transparent; -fx-text-fill: #4A4A4A; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 8; -fx-font-size: 11; -fx-padding: 8 4; -fx-alignment: CENTER;"/>
+            <ToggleButton fx:id="tabVideoCreator" text="🎬&#10;Video Creator" toggleGroup="$sidebarGroup"
+                          onAction="#showVideoCreator" maxWidth="Infinity"
+                          wrapText="true" textAlignment="CENTER"
+                              style="-fx-background-color: transparent; -fx-text-fill: #4A4A4A; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 8; -fx-font-size: 11; -fx-padding: 8 4; -fx-alignment: CENTER;"/>
+            <ToggleButton fx:id="tabShare" text="📤&#10;Share" toggleGroup="$sidebarGroup"
+                          onAction="#showShare" maxWidth="Infinity"
+                          wrapText="true" textAlignment="CENTER"
+                              style="-fx-background-color: transparent; -fx-text-fill: #4A4A4A; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 8; -fx-font-size: 11; -fx-padding: 8 4; -fx-alignment: CENTER;"/>
+        </VBox>
+    </left>
+
+    <!-- ===== CENTER CONTENT ===== -->
     <center>
-        <StackPane fx:id="centerStack">
-            <ScrollPane fx:id="imageScrollPane" visible="false" fitToWidth="true" fitToHeight="true"
-                        style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent;">
-                <StackPane alignment="CENTER">
-                    <ImageView fx:id="mainImageView" preserveRatio="true" />
-                </StackPane>
-            </ScrollPane>
+        <StackPane style="-fx-background-color: #FFFFFF;">
 
-            <VBox fx:id="uploadPlaceholder" alignment="CENTER" spacing="20">
-                <Button onAction="#handleOpenImage"
-                        style="-fx-background-color: #B8E1FF; -fx-background-radius: 80; -fx-min-width: 160; -fx-min-height: 160; -fx-font-size: 60; -fx-text-fill: white; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);"
-                        text="+"/>
-                <Label text="Upload a Photo" style="-fx-font-size: 18; -fx-text-fill: #A0A0A0; -fx-font-weight: bold;"/>
+            <!-- DASHBOARD -->
+            <VBox fx:id="dashboardPane" alignment="CENTER" spacing="24" visible="true" managed="true"
+                  style="-fx-padding: 60;">
+                <Label text="📷 Photo Editor" style="-fx-font-size: 40; -fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                <Label text="Welcome! Open an image or select a tab to get started."
+                       style="-fx-font-size: 16; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-text-fill: #7A7A7A;"/>
+                <Button text="📂  Open Image" onAction="#handleOpenImage" prefWidth="220" prefHeight="52"
+                    style="-fx-background-color: #A9D6FF; -fx-text-fill: #4A4A4A; -fx-background-radius: 12; -fx-border-color: #D0E8FF; -fx-border-radius: 12; -fx-font-size: 15; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold;"/>
             </VBox>
 
-            <Label fx:id="heartIcon" text="❤" visible="false" mouseTransparent="true"
-                   StackPane.alignment="TOP_RIGHT"
-                   style="-fx-font-size: 80; -fx-padding: 40; -fx-text-fill: #dfe6e9; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0.5, 0, 0);"/>
+            <!-- GALLERY -->
+            <VBox fx:id="galleryPane" alignment="CENTER" spacing="20" visible="false" managed="false"
+                  style="-fx-padding: 40;">
+                <Label text="🖼  Gallery" style="-fx-font-size: 28; -fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                <Label text="Your image collection will appear here."
+                       style="-fx-font-size: 14; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-text-fill: #7A7A7A;"/>
+            </VBox>
+
+            <!-- DIP EDITOR -->
+            <HBox fx:id="dipEditorPane" visible="false" managed="false">
+                <StackPane HBox.hgrow="ALWAYS" style="-fx-background-color: #FFFFFF;">
+                    <ScrollPane fx:id="imageScrollPane" visible="false" fitToWidth="true" fitToHeight="true"
+                                style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent;">
+                        <StackPane alignment="CENTER">
+                            <ImageView fx:id="mainImageView" preserveRatio="true"/>
+                        </StackPane>
+                    </ScrollPane>
+                    <VBox fx:id="uploadPlaceholder" alignment="CENTER" spacing="20">
+                        <Button onAction="#handleOpenImage"
+                                style="-fx-background-color: #A9D6FF; -fx-background-radius: 80; -fx-min-width: 160; -fx-min-height: 160; -fx-font-size: 60; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-text-fill: white;"
+                                text="+"/>
+                        <Label text="Open or Upload a Photo"
+                               style="-fx-font-size: 18; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-text-fill: #7A7A7A; -fx-font-weight: bold;"/>
+                    </VBox>
+                </StackPane>
+                <fx:include source="dip-view.fxml"/>
+            </HBox>
+
+            <!-- ANNOTATION -->
+            <VBox fx:id="annotationPane" alignment="CENTER" spacing="20" visible="false" managed="false"
+                  style="-fx-padding: 40;">
+                <Label text="✏  Annotation" style="-fx-font-size: 28; -fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                <Label text="Annotation tools coming soon." style="-fx-font-size: 14; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-text-fill: #7A7A7A;"/>
+            </VBox>
+
+            <!-- FAVORITES -->
+            <VBox fx:id="favoritesPane" alignment="CENTER" spacing="20" visible="false" managed="false"
+                  style="-fx-padding: 40;">
+                <Label text="⭐  Favorites" style="-fx-font-size: 28; -fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                <Label text="Your favorite images will appear here." style="-fx-font-size: 14; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-text-fill: #7A7A7A;"/>
+            </VBox>
+
+            <!-- OBJECT EXTRACTION -->
+            <VBox fx:id="objectExtractionPane" alignment="CENTER" spacing="20" visible="false" managed="false"
+                  style="-fx-padding: 40;">
+                <Label text="✂  Object Extraction" style="-fx-font-size: 28; -fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                <Label text="Object extraction tools coming soon." style="-fx-font-size: 14; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-text-fill: #7A7A7A;"/>
+            </VBox>
+
+            <!-- MOSAIC GENERATOR -->
+            <VBox fx:id="mosaicPane" alignment="CENTER" spacing="20" visible="false" managed="false"
+                  style="-fx-padding: 40;">
+                <Label text="🔲  Mosaic Generator" style="-fx-font-size: 28; -fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                <Label text="Mosaic preview coming soon." style="-fx-font-size: 14; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-text-fill: #7A7A7A;"/>
+            </VBox>
+
+            <!-- VIDEO CREATOR -->
+            <VBox fx:id="videoCreatorPane" alignment="CENTER" spacing="20" visible="false" managed="false"
+                  style="-fx-padding: 40;">
+                <Label text="🎬  Video Creator" style="-fx-font-size: 28; -fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                <Label text="Timeline and media player coming soon." style="-fx-font-size: 14; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-text-fill: #7A7A7A;"/>
+            </VBox>
+
+            <!-- SHARE -->
+            <VBox fx:id="shareContentPane" alignment="CENTER" spacing="24" visible="false" managed="false"
+                  style="-fx-padding: 40;">
+                <Label text="📤  Share" style="-fx-font-size: 28; -fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                <HBox spacing="20" alignment="CENTER">
+                    <Button text="📧  Share via Email" onAction="#handleShareEmail" prefWidth="200" prefHeight="50"
+                            style="-fx-background-color: #FFD8A8; -fx-text-fill: #4A4A4A; -fx-background-radius: 10; -fx-border-color: #D0E8FF; -fx-border-radius: 10; -fx-font-size: 14; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif;"/>
+                    <Button text="💬  Share via WhatsApp" onAction="#handleShareWhatsApp" prefWidth="220" prefHeight="50"
+                            style="-fx-background-color: #FFD8A8; -fx-text-fill: #4A4A4A; -fx-background-radius: 10; -fx-border-color: #D0E8FF; -fx-border-radius: 10; -fx-font-size: 14; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif;"/>
+                </HBox>
+            </VBox>
+
+            <!-- SETTINGS -->
+            <VBox fx:id="settingsPane" alignment="CENTER" spacing="24" visible="false" managed="false"
+                  style="-fx-padding: 40;">
+                <Label text="⚙  Settings" style="-fx-font-size: 28; -fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                <HBox spacing="20" alignment="CENTER">
+                    <Button text="🌙  Toggle Dark / Light Mode" onAction="#handleToggleDarkMode" prefWidth="240" prefHeight="50"
+                            style="-fx-background-color: #A9D6FF; -fx-text-fill: #4A4A4A; -fx-background-radius: 10; -fx-border-color: #D0E8FF; -fx-border-radius: 10; -fx-font-size: 14; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif;"/>
+                    <Button text="👤  User Profile" prefWidth="160" prefHeight="50" onAction="#handleUserProfile"
+                            style="-fx-background-color: #A9D6FF; -fx-text-fill: #4A4A4A; -fx-background-radius: 10; -fx-border-color: #D0E8FF; -fx-border-radius: 10; -fx-font-size: 14; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif;"/>
+                </HBox>
+            </VBox>
+
+            <!-- USER PROFILE -->
+            <VBox fx:id="userProfilePane" alignment="CENTER" spacing="24" visible="false" managed="false"
+                  style="-fx-padding: 60;">
+                <!-- Card -->
+                <VBox alignment="CENTER" spacing="20" maxWidth="480"
+                      style="-fx-background-color: #F4F8FF; -fx-background-radius: 20; -fx-border-color: #D0E8FF; -fx-border-radius: 20; -fx-border-width: 1.5; -fx-padding: 40 50;">
+
+                    <!-- Avatar circle with initials -->
+                    <StackPane prefWidth="100" prefHeight="100" maxWidth="100" maxHeight="100">
+                        <StackPane style="-fx-background-color: #6FBAFF; -fx-background-radius: 50; -fx-min-width: 100; -fx-min-height: 100;"/>
+                        <Label fx:id="profileInitialsLabel" text="U"
+                               style="-fx-font-size: 38; -fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-text-fill: white;"/>
+                    </StackPane>
+
+                    <Label fx:id="profileDisplayName" text="Your Name"
+                           style="-fx-font-size: 22; -fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+
+                    <!-- Fields -->
+                    <VBox spacing="12" maxWidth="360">
+                        <Label text="Display Name" style="-fx-font-size: 12; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-text-fill: #7A7A7A;"/>
+                        <TextField fx:id="profileNameField" promptText="Enter your name" prefHeight="38"
+                                   style="-fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #D0E8FF; -fx-font-size: 14; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-padding: 6 12;"/>
+
+                        <Label text="Email" style="-fx-font-size: 12; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-text-fill: #7A7A7A;"/>
+                        <TextField fx:id="profileEmailField" promptText="Enter your email" prefHeight="38"
+                                   style="-fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #D0E8FF; -fx-font-size: 14; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-padding: 6 12;"/>
+
+                        <Label text="Bio" style="-fx-font-size: 12; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-text-fill: #7A7A7A;"/>
+                        <TextArea fx:id="profileBioField" promptText="Tell us about yourself..." prefHeight="80" wrapText="true"
+                                  style="-fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #D0E8FF; -fx-font-size: 14; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-padding: 6 12;"/>
+                    </VBox>
+
+                    <Button text="💾  Save Profile" onAction="#handleSaveProfile" prefWidth="200" prefHeight="44"
+                            style="-fx-background-color: #6FBAFF; -fx-text-fill: white; -fx-background-radius: 10; -fx-border-radius: 10; -fx-font-size: 14; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold;"/>
+                    <Label fx:id="profileSaveStatus" text="" style="-fx-font-size: 12; -fx-text-fill: #5AA85A; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif;"/>
+                    <Button text="←  Back" onAction="#handleProfileBack" prefWidth="200" prefHeight="44"
+                            style="-fx-background-color: transparent; -fx-text-fill: #6FBAFF; -fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #6FBAFF; -fx-border-width: 1.5; -fx-font-size: 14; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif;"/>
+                </VBox>
+            </VBox>
+
         </StackPane>
     </center>
 
-    <right>
-        <fx:include source="dip-view.fxml"/>
-    </right>
+    <!-- ===== BOTTOM STATUS BAR ===== -->
+    <bottom>
+        <HBox fx:id="statusBarHBox" spacing="20" alignment="CENTER_LEFT"
+              style="-fx-background-color: #BFDFFF; -fx-padding: 5 15; -fx-border-color: #D0E8FF; -fx-border-width: 1 0 0 0;">
+            <Label fx:id="statusFileName" text="File: No file"
+                   style="-fx-text-fill: #4A4A4A; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-font-size: 11;"/>
+            <Separator orientation="VERTICAL" style="-fx-background-color: #7F8C8D;"/>
+            <Label fx:id="statusResolution" text="Resolution: —"
+                   style="-fx-text-fill: #4A4A4A; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-font-size: 11;"/>
+            <Separator orientation="VERTICAL" style="-fx-background-color: #7F8C8D;"/>
+            <Label fx:id="statusZoom" text="Zoom: 100%"
+                   style="-fx-text-fill: #4A4A4A; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-font-size: 11;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="statusProcessing" text="Ready"
+                   style="-fx-text-fill: #7A7A7A; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-font-size: 11; -fx-font-weight: bold;"/>
+        </HBox>
+    </bottom>
+
 </BorderPane>

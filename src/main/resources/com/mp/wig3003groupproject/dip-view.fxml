@@ -8,61 +8,61 @@
 <?import javafx.scene.image.*?>
 
 <VBox spacing="15" prefWidth="320"
-      style="-fx-background-color: #FDFCF0; -fx-padding: 20; -fx-background-radius: 40 0 0 40;"
+    style="-fx-background-color: #FFFFFF; -fx-border-color: #D0E8FF; -fx-border-width: 0 0 0 1; -fx-padding: 20; -fx-background-radius: 40 0 0 40; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif;"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.mp.wig3003groupproject.DIPController">
 
     <HBox alignment="CENTER_LEFT" spacing="10">
-        <Label text="🎨 Image Lab" style="-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #2d3436;"/>
+        <Label text="🎨 Image Lab" style="-fx-font-size: 22; -fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
         <Region HBox.hgrow="ALWAYS" />
         <Button text="Reset" onAction="#handleResetAll"
-                style="-fx-background-color: #ff7675; -fx-text-fill: white; -fx-background-radius: 10; -fx-font-size: 11;"/>
+                style="-fx-background-color: #9DCCFF; -fx-text-fill: #4A4A4A; -fx-background-radius: 10; -fx-font-size: 11; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-border-color: #E5E0F8; -fx-border-radius: 10;"/>
     </HBox>
 
     <ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent;">
         <VBox spacing="20">
 
-            <VBox spacing="12" style="-fx-background-color: #ffffff99; -fx-padding: 15; -fx-background-radius: 15;">
-                <Label text="ADJUSTMENTS" style="-fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #636e72;"/>
+            <VBox spacing="12" style="-fx-background-color: #FFFFFF; -fx-padding: 15; -fx-background-radius: 15; -fx-border-color: #D9C8FF; -fx-border-radius: 15;">
+                <Label text="ADJUSTMENTS" style="-fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #7A7A7A;"/>
                 <VBox spacing="5">
                     <HBox alignment="CENTER_LEFT">
-                        <Label text="Exposure" style="-fx-text-fill: #2d3436; -fx-font-weight: bold;"/>
-                        <Region HBox.hgrow="ALWAYS"/><Label fx:id="brightnessLabel" text="0%" style="-fx-text-fill: #0984e3;"/>
+                        <Label text="Exposure" style="-fx-text-fill: #4A4A4A; -fx-font-weight: bold;"/>
+                        <Region HBox.hgrow="ALWAYS"/><Label fx:id="brightnessLabel" text="0%" style="-fx-text-fill: #7A7A7A;"/>
                     </HBox>
                     <Slider fx:id="brightnessSlider" min="-1.0" max="1.0" value="0"/>
                 </VBox>
                 <VBox spacing="5">
                     <HBox alignment="CENTER_LEFT">
-                        <Label text="Contrast" style="-fx-text-fill: #2d3436; -fx-font-weight: bold;"/>
-                        <Region HBox.hgrow="ALWAYS"/><Label fx:id="contrastLabel" text="0%" style="-fx-text-fill: #0984e3;"/>
+                        <Label text="Contrast" style="-fx-text-fill: #4A4A4A; -fx-font-weight: bold;"/>
+                        <Region HBox.hgrow="ALWAYS"/><Label fx:id="contrastLabel" text="0%" style="-fx-text-fill: #7A7A7A;"/>
                     </HBox>
                     <Slider fx:id="contrastSlider" min="-1.0" max="1.0" value="0"/>
                 </VBox>
             </VBox>
 
-            <VBox spacing="10" style="-fx-background-color: #ffffff99; -fx-padding: 15; -fx-background-radius: 15;">
-                <Label text="TRANSFORM" style="-fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #636e72;"/>
-                <Button text="🔄 Rotate 90°" onAction="#handleRotate" maxWidth="Infinity" style="-fx-background-color: #E6E6FA; -fx-background-radius: 10;"/>
+            <VBox spacing="10" style="-fx-background-color: #FFFFFF; -fx-padding: 15; -fx-background-radius: 15; -fx-border-color: #C8E8FF; -fx-border-radius: 15;">
+                <Label text="TRANSFORM" style="-fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #7A7A7A;"/>
+                <Button text="🔄 Rotate 90°" onAction="#handleRotate" maxWidth="Infinity" style="-fx-background-color: #A9D6FF; -fx-text-fill: #4A4A4A; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 10; -fx-border-color: #E5E0F8; -fx-border-radius: 10;"/>
                 <HBox spacing="5" alignment="CENTER">
                     <TextField fx:id="widthField" prefWidth="70" promptText="W"/>
                     <Label text="×"/>
                     <TextField fx:id="heightField" prefWidth="70" promptText="H"/>
-                    <Button text="Go" onAction="#handleResize" style="-fx-background-color: #B8E1FF; -fx-background-radius: 5;"/>
+                    <Button text="Go" onAction="#handleResize" style="-fx-background-color: #A9D6FF; -fx-text-fill: #4A4A4A; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 5; -fx-border-color: #E5E0F8; -fx-border-radius: 5;"/>
                 </HBox>
             </VBox>
 
-            <VBox spacing="10" style="-fx-background-color: #ffffff99; -fx-padding: 15; -fx-background-radius: 15;">
-                <Label text="DECORATION" style="-fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #636e72;"/>
-                <Button fx:id="borderToggleBtn" text="Enable Border" onAction="#handleBorderToggle" maxWidth="Infinity" style="-fx-background-color: #FAFAD2; -fx-background-radius: 10;"/>
+            <VBox spacing="10" style="-fx-background-color: #FFFFFF; -fx-padding: 15; -fx-background-radius: 15; -fx-border-color: #FFE8C8; -fx-border-radius: 15;">
+                <Label text="DECORATION" style="-fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #7A7A7A;"/>
+                <Button fx:id="borderToggleBtn" text="Enable Border" onAction="#handleBorderToggle" maxWidth="Infinity" style="-fx-background-color: #A9D6FF; -fx-text-fill: #4A4A4A; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 10; -fx-border-color: #E5E0F8; -fx-border-radius: 10;"/>
 
                 <VBox fx:id="borderControlsBox" spacing="12" disable="true" opacity="0.4">
                     <HBox spacing="8" alignment="BOTTOM_LEFT">
                         <VBox spacing="5" prefWidth="130">
-                            <Label text="Color" style="-fx-font-size: 11; -fx-text-fill: #2d3436;"/>
+                            <Label text="Color" style="-fx-font-size: 11; -fx-text-fill: #4A4A4A;"/>
                             <ColorPicker fx:id="customColorPicker" style="-fx-background-radius: 5;" maxWidth="Infinity"/>
                         </VBox>
                         <VBox spacing="5" prefWidth="130">
-                            <Label text="Pattern" style="-fx-font-size: 11; -fx-text-fill: #2d3436;"/>
+                            <Label text="Pattern" style="-fx-font-size: 11; -fx-text-fill: #4A4A4A;"/>
                             <ComboBox fx:id="patternCombo" maxWidth="Infinity" style="-fx-background-radius: 5;">
                                 <items>
                                     <FXCollections fx:factory="observableArrayList">
@@ -78,25 +78,25 @@
                     </HBox>
 
                     <VBox spacing="3">
-                        <Label text="Thickness" style="-fx-text-fill: #2d3436; -fx-font-weight: bold; -fx-font-size: 12;"/>
+                        <Label text="Thickness" style="-fx-text-fill: #4A4A4A; -fx-font-weight: bold; -fx-font-size: 12;"/>
                         <Slider fx:id="borderThicknessSlider" min="1" max="100" value="25"/>
                     </VBox>
                     <VBox spacing="3">
-                        <Label text="Roundness" style="-fx-text-fill: #2d3436; -fx-font-weight: bold; -fx-font-size: 12;"/>
+                        <Label text="Roundness" style="-fx-text-fill: #4A4A4A; -fx-font-weight: bold; -fx-font-size: 12;"/>
                         <Slider fx:id="borderRoundSlider" min="0" max="250" value="0"/>
                     </VBox>
                 </VBox>
             </VBox>
 
-            <VBox spacing="10" style="-fx-background-color: #ffffff99; -fx-padding: 15; -fx-background-radius: 15;">
-                <Label text="FILTERS" style="-fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #636e72;"/>
-                <Button fx:id="grayscaleBtn" text="Apply Grayscale" onAction="#handleGrayscale" maxWidth="Infinity" style="-fx-background-color: #FFD1DC; -fx-background-radius: 10;"/>
-                <ToggleButton fx:id="selectionToggle" text="Magic Wand" maxWidth="Infinity" style="-fx-background-color: #F0E68C; -fx-background-radius: 10;"/>
+            <VBox spacing="10" style="-fx-background-color: #FFFFFF; -fx-padding: 15; -fx-background-radius: 15; -fx-border-color: #C8F0DC; -fx-border-radius: 15;">
+                <Label text="FILTERS" style="-fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #7A7A7A;"/>
+                <Button fx:id="grayscaleBtn" text="Apply Grayscale" onAction="#handleGrayscale" maxWidth="Infinity" style="-fx-background-color: #DDF5E1; -fx-text-fill: #4A4A4A; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 10; -fx-border-color: #E5E0F8; -fx-border-radius: 10;"/>
+                <ToggleButton fx:id="selectionToggle" text="Magic Wand" maxWidth="Infinity" style="-fx-background-color: #E7DBFF; -fx-text-fill: #4A4A4A; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 10; -fx-border-color: #E5E0F8; -fx-border-radius: 10;"/>
             </VBox>
 
             <VBox fx:id="downloadContainer" visible="false" style="-fx-padding: 0 0 30 0;">
                 <Button text="💾 Export Image" onAction="#handleSaveAction" maxWidth="Infinity" minHeight="50"
-                        style="-fx-background-color: #C1E1C1; -fx-background-radius: 20; -fx-font-weight: bold;"/>
+                        style="-fx-background-color: #A9D6FF; -fx-text-fill: #4A4A4A; -fx-background-radius: 20; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-border-color: #E5E0F8; -fx-border-radius: 20;"/>
             </VBox>
         </VBox>
     </ScrollPane>

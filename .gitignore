@@ -36,3 +36,7 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+# Database and Locally Edited Images
+annotations_database.properties
+Edited_Gallery/

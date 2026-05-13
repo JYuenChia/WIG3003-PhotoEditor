@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:id="rootPane"
+            fx:controller="com.mp.wig3003groupproject.MainController"
+            style="-fx-background-color: #F7F8FA; -fx-font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;">
+
+    <top>
+        <HBox fx:id="toolbarHBox" spacing="10" alignment="CENTER_LEFT"
+              style="-fx-background-color: #FFFFFF; -fx-padding: 10 20; -fx-border-color: #E8EAF0; -fx-border-width: 0 0 1 0; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 8, 0, 0, 2);">
+
+            <HBox alignment="CENTER_LEFT" prefWidth="220" minWidth="220" maxWidth="220">
+                <Label fx:id="brandLabel" text="✦PhotoEditor✦" style="-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
+            </HBox>
+            
+            <Separator orientation="VERTICAL" style="-fx-background-color: #E0E4F0; -fx-pref-height: 22;"/>
+
+            <Button fx:id="btnOpen" text="⊕ Open File" onAction="#handleOpenImage" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
+            <Button fx:id="btnClear" text="✕ Clear" onAction="#handleDelete" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
+            
+            <Separator orientation="VERTICAL" style="-fx-background-color: #E0E4F0; -fx-pref-height: 22;"/>
+
+            <Button fx:id="btnUndo" text="↩ Undo" onAction="#handleUndo" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
+            <Button fx:id="btnRedo" text="↪ Redo" onAction="#handleRedo" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
+            
+            <Separator orientation="VERTICAL" style="-fx-background-color: #E0E4F0; -fx-pref-height: 22;"/>
+
+            <Button fx:id="btnZoomIn" text="+ Zoom In" onAction="#handleZoomIn" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
+            <Button fx:id="btnZoomOut" text="- Zoom Out" onAction="#handleZoomOut" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <TextField fx:id="searchBar" promptText="🔍  Search Gallery..." prefWidth="240" prefHeight="34"
+                       onAction="#handleSearch"
+                       style="-fx-background-radius: 20; -fx-background-color: #F0F2F8; -fx-border-color: #E0E4F0; -fx-border-radius: 20; -fx-padding: 4 14; -fx-font-size: 12; -fx-text-fill: #3D4155;"/>
+
+            <Separator orientation="VERTICAL" style="-fx-background-color: #E0E4F0; -fx-pref-height: 22;"/>
+
+            <Button fx:id="btnSettings" text="⚙ Settings" onAction="#handleSettings" style="-fx-background-color: #F0F2F8; -fx-text-fill: #3D4155; -fx-background-radius: 8; -fx-font-size: 13; -fx-font-weight: bold; -fx-padding: 6 14; -fx-cursor: hand;"/>
+        </HBox>
+    </top>
+
+    <left>
+        <VBox fx:id="sidebarVBox" spacing="8"
+              style="-fx-background-color: #1A1D2E; -fx-padding: 16 10; -fx-min-width: 220; -fx-pref-width: 220;">
+
+            <Button text="☰" onAction="#handleSidebarToggle" maxWidth="Infinity"
+                    style="-fx-background-color: transparent; -fx-font-size: 22; -fx-text-fill: #8892B0; -fx-padding: 4 0 20 8; -fx-cursor: hand; -fx-alignment: CENTER_LEFT;"/>
+
+            <fx:define>
+                <ToggleGroup fx:id="sidebarGroup"/>
+            </fx:define>
+
+            <ToggleButton fx:id="tabDashboard"    text="⌂  Dashboard"   toggleGroup="$sidebarGroup" onAction="#showDashboard"        selected="true" maxWidth="Infinity" wrapText="true" textAlignment="LEFT"
+                          style="-fx-background-color: #2E3250; -fx-text-fill: #CDD6F4; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"/>
+            <ToggleButton fx:id="tabGallery"      text="⊞  Gallery"      toggleGroup="$sidebarGroup" onAction="#showGallery"          maxWidth="Infinity" wrapText="true" textAlignment="LEFT"
+                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"/>
+            <ToggleButton fx:id="tabDipEditor"    text="✦  DIP Editor"   toggleGroup="$sidebarGroup" onAction="#showDipEditor"        maxWidth="Infinity" wrapText="true" textAlignment="LEFT"
+                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"/>
+            
+            <ToggleButton fx:id="tabObjectExtraction" text="◧  Extraction"       toggleGroup="$sidebarGroup" onAction="#showObjectExtraction"  maxWidth="Infinity" wrapText="true" textAlignment="LEFT"
+                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"/>
+            <ToggleButton fx:id="tabMosaic"           text="▦  Mosaic"           toggleGroup="$sidebarGroup" onAction="#showMosaic"           maxWidth="Infinity" wrapText="true" textAlignment="LEFT"
+                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"/>
+            <ToggleButton fx:id="tabVideoCreator"     text="►  Video"            toggleGroup="$sidebarGroup" onAction="#showVideoCreator"     maxWidth="Infinity" wrapText="true" textAlignment="LEFT"
+                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"/>
+            <ToggleButton fx:id="tabShare"            text="↗  Share"            toggleGroup="$sidebarGroup" onAction="#showShare"            maxWidth="Infinity" wrapText="true" textAlignment="LEFT"
+                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"/>
+
+            <Region VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </left>
+
+    <center>
+        <StackPane fx:id="mainContentStackPane" style="-fx-background-color: #F7F8FA;">
+
+            <VBox fx:id="dashboardPane" alignment="CENTER" spacing="35" visible="true" managed="true" style="-fx-padding: 80;">
+                <VBox alignment="CENTER" spacing="8">
+                    <Label text="✦PhotoEditor✦" style="-fx-font-size: 52; -fx-font-weight: bold; -fx-text-fill: #4F5BD5;"/>
+                    <Label text="Professional image editing, built for everyone." style="-fx-font-size: 18; -fx-text-fill: #8892B0;"/>
+                </VBox>
+
+                <HBox spacing="20" alignment="CENTER" style="-fx-padding: 20 0 0 0;">
+                    <Button onAction="#handleOpenImage" prefWidth="180" prefHeight="130"
+                            style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-border-color: #D8DEFF; -fx-border-width: 2; -fx-border-radius: 16; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 10, 0, 0, 4);">
+                        <graphic>
+                            <VBox alignment="CENTER" spacing="8">
+                                <Label text="✦" style="-fx-font-size: 28; -fx-text-fill: #4F5BD5;"/>
+                                <Label text="Start Editing" style="-fx-font-size: 15; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
+                                <Label text="Open an image file" style="-fx-font-size: 12; -fx-text-fill: #8892B0;"/>
+                            </VBox>
+                        </graphic>
+                    </Button>
+                    
+                    <Button onAction="#showGallery" prefWidth="180" prefHeight="130"
+                            style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-border-color: #D8DEFF; -fx-border-width: 2; -fx-border-radius: 16; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 10, 0, 0, 4);">
+                        <graphic>
+                            <VBox alignment="CENTER" spacing="8">
+                                <Label text="⊞" style="-fx-font-size: 28; -fx-text-fill: #4F5BD5;"/>
+                                <Label text="View Gallery" style="-fx-font-size: 15; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
+                                <Label text="Browse your work" style="-fx-font-size: 12; -fx-text-fill: #8892B0;"/>
+                            </VBox>
+                        </graphic>
+                    </Button>
+
+                    <Button onAction="#showObjectExtraction" prefWidth="180" prefHeight="130"
+                            style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-border-color: #D8DEFF; -fx-border-width: 2; -fx-border-radius: 16; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 10, 0, 0, 4);">
+                        <graphic>
+                            <VBox alignment="CENTER" spacing="8">
+                                <Label text="◧" style="-fx-font-size: 28; -fx-text-fill: #4F5BD5;"/>
+                                <Label text="Extraction Tool" style="-fx-font-size: 15; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
+                                <Label text="Isolate photo subjects" style="-fx-font-size: 12; -fx-text-fill: #8892B0;"/>
+                            </VBox>
+                        </graphic>
+                    </Button>
+                </HBox>
+            </VBox>
+
+            <VBox fx:id="galleryPane" alignment="TOP_CENTER" spacing="0" visible="false" managed="false">
+                <HBox alignment="CENTER_LEFT" spacing="12"
+                      style="-fx-background-color: transparent; -fx-padding: 18 28;">
+                    <VBox spacing="2">
+                        <Label text="Gallery" style="-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #4F5BD5;"/>
+                        <Label text="Double-click to preview. Annotated photos show a heart." style="-fx-font-size: 13; -fx-text-fill: #8892B0;"/>
+                    </VBox>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="📁 Scan Local Folder" onAction="#handleBrowseFolder" 
+                            style="-fx-background-color: #EEF2FF; -fx-text-fill: #4F5BD5; -fx-background-radius: 8; -fx-font-weight: bold; -fx-font-size: 13; -fx-padding: 8 16; -fx-cursor: hand; -fx-border-color: #D8DEFF; -fx-border-width: 1; -fx-border-radius: 8;"/>
+                </HBox>
+                
+                <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                            style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;">
+                    <FlowPane fx:id="galleryGrid" hgap="25" vgap="25" alignment="TOP_LEFT" style="-fx-padding: 32;" />
+                </ScrollPane>
+            </VBox>
+
+            <HBox fx:id="dipEditorPane" visible="false" managed="false">
+                <VBox fx:id="dipWorkspaceBg" HBox.hgrow="ALWAYS" spacing="0" style="-fx-background-color: #F0F2F8;">
+                    <StackPane VBox.vgrow="ALWAYS">
+                        <ScrollPane fx:id="imageScrollPane" visible="false" fitToWidth="true" fitToHeight="true"
+                                    style="-fx-background: #F0F2F8; -fx-background-color: #F0F2F8; -fx-border-color: transparent;">
+                            <StackPane alignment="CENTER" style="-fx-background-color: transparent;">
+                                <ImageView fx:id="mainImageView" preserveRatio="true"
+                                           style="-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 30, 0, 0, 8);"/>
+                                <Label fx:id="heartIcon" text="♥" visible="false" mouseTransparent="true"
+                                       style="-fx-font-size: 38; -fx-padding: 0; -fx-text-fill: #F38BA8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 8, 0.5, 0, 2);"/>
+                            </StackPane>
+                        </ScrollPane>
+
+                        <VBox fx:id="uploadPlaceholder" alignment="CENTER" spacing="16"
+                              style="-fx-background-color: #F0F2F8;">
+                            <Button onAction="#handleOpenImage"
+                                    style="-fx-background-color: #FFFFFF; -fx-background-radius: 20; -fx-min-width: 140; -fx-min-height: 140; -fx-font-size: 50; -fx-text-fill: #4F5BD5; -fx-cursor: hand; -fx-border-color: #D8DEFF; -fx-border-width: 2; -fx-border-radius: 20; -fx-effect: dropshadow(gaussian,rgba(79,91,213,0.12),16,0,0,4);"
+                                    text="+"/>
+                            <Label text="Drop an image or click +" style="-fx-font-size: 15; -fx-text-fill: #8892B0; -fx-font-weight: bold;"/>
+                            <Label text="PNG · JPG · BMP · GIF" style="-fx-font-size: 12; -fx-text-fill: #B0BAD4;"/>
+                        </VBox>
+                    </StackPane>
+
+                    <VBox fx:id="annotationBox" visible="false" managed="false" spacing="10"
+                          style="-fx-background-color: #FFFFFF; -fx-padding: 14 20; -fx-border-color: #E8EAF0; -fx-border-width: 1 0 0 0;">
+                        <Label text="METADATA &amp; ANNOTATION"
+                               style="-fx-font-weight: bold; -fx-text-fill: #8892B0; -fx-font-size: 10; -fx-letter-spacing: 1;"/>
+                        <HBox spacing="10">
+                            <TextField fx:id="annotationField"
+                                       promptText="Add notes, tags, or a description to this image..."
+                                       HBox.hgrow="ALWAYS"
+                                       style="-fx-background-radius: 8; -fx-border-color: #E0E4F0; -fx-border-radius: 8; -fx-padding: 9 12; -fx-font-size: 13; -fx-background-color: #F7F8FA;"/>
+                            <Button text="Save Note" onAction="#handleSaveAnnotation"
+                                    style="-fx-background-color: #EEF2FF; -fx-text-fill: #4F5BD5; -fx-background-radius: 8; -fx-font-weight: bold; -fx-font-size: 13; -fx-padding: 9 18; -fx-cursor: hand; -fx-border-color: #D8DEFF; -fx-border-width: 1; -fx-border-radius: 8;"/>
+                        </HBox>
+                    </VBox>
+                </VBox>
+
+                <fx:include source="dip-view.fxml"/>
+            </HBox>
+
+            <VBox fx:id="objectExtractionPane" alignment="CENTER" spacing="16" visible="false" managed="false" style="-fx-padding: 60;"><Label text="◧" style="-fx-font-size: 64; -fx-text-fill: #4F5BD5;"/><Label text="Object Extraction" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #4F5BD5;"/></VBox>
+            <VBox fx:id="mosaicPane" alignment="CENTER" spacing="16" visible="false" managed="false" style="-fx-padding: 60;"><Label text="▦" style="-fx-font-size: 64; -fx-text-fill: #4F5BD5;"/><Label text="Mosaic Generator" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #4F5BD5;"/></VBox>
+            <VBox fx:id="videoCreatorPane" alignment="CENTER" spacing="16" visible="false" managed="false" style="-fx-padding: 60;"><Label text="►" style="-fx-font-size: 64; -fx-text-fill: #4F5BD5;"/><Label text="Video Creator" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #4F5BD5;"/></VBox>
+            <VBox fx:id="shareContentPane" alignment="CENTER" spacing="16" visible="false" managed="false" style="-fx-padding: 60;"><Label text="↗ Share" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #4F5BD5;"/></VBox>
+
+            <VBox fx:id="settingsPane" alignment="CENTER" spacing="24" visible="false" managed="false" style="-fx-padding: 60;">
+                <VBox alignment="CENTER" spacing="6">
+                    <Label text="⚙" style="-fx-font-size: 48; -fx-text-fill: #8892B0;"/>
+                    <Label text="Settings" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #4F5BD5;"/>
+                </VBox>
+                <VBox alignment="CENTER" spacing="12" maxWidth="320">
+                    <Button text="◑  Toggle Dark / Light Mode" onAction="#handleToggleDarkMode" maxWidth="Infinity" prefHeight="50" style="-fx-background-color: #FFFFFF; -fx-text-fill: #1A1D2E; -fx-background-radius: 12; -fx-font-size: 14; -fx-font-weight: bold; -fx-cursor: hand; -fx-border-color: #E0E4F0; -fx-border-width: 1.5; -fx-border-radius: 12;"/>
+                    <Button text="👤  User Profile" prefHeight="50" maxWidth="Infinity" onAction="#handleUserProfile" style="-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-background-radius: 12; -fx-font-size: 14; -fx-font-weight: bold; -fx-cursor: hand;"/>
+                </VBox>
+            </VBox>
+
+            <VBox fx:id="userProfilePane" alignment="CENTER" spacing="24" visible="false" managed="false" style="-fx-padding: 60;">
+                <VBox alignment="CENTER" spacing="20" maxWidth="460" style="-fx-background-color: #FFFFFF; -fx-background-radius: 18; -fx-border-color: #E8EAF0; -fx-border-width: 1; -fx-border-radius: 18; -fx-padding: 40 48; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 24, 0, 0, 6);">
+                    <StackPane prefWidth="88" prefHeight="88" maxWidth="88" maxHeight="88">
+                        <StackPane style="-fx-background-color: #4F5BD5; -fx-background-radius: 44; -fx-min-width: 88; -fx-min-height: 88;"/>
+                        <Label fx:id="profileInitialsLabel" text="U" style="-fx-font-size: 32; -fx-font-weight: bold; -fx-text-fill: white;"/>
+                    </StackPane>
+                    <Label fx:id="profileDisplayName" text="Your Name" style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
+                    <VBox spacing="10" maxWidth="340">
+                        <Label text="Display Name" style="-fx-font-size: 11; -fx-text-fill: #8892B0; -fx-font-weight: bold;"/>
+                        <TextField fx:id="profileNameField" prefHeight="40" style="-fx-background-radius: 8; -fx-border-color: #E0E4F0; -fx-border-radius: 8; -fx-font-size: 13; -fx-padding: 8 12; -fx-background-color: #F7F8FA;"/>
+                        <Label text="Email" style="-fx-font-size: 11; -fx-text-fill: #8892B0; -fx-font-weight: bold;"/>
+                        <TextField fx:id="profileEmailField" prefHeight="40" style="-fx-background-radius: 8; -fx-border-color: #E0E4F0; -fx-border-radius: 8; -fx-font-size: 13; -fx-padding: 8 12; -fx-background-color: #F7F8FA;"/>
+                        <Label text="Bio" style="-fx-font-size: 11; -fx-text-fill: #8892B0; -fx-font-weight: bold;"/>
+                        <TextArea fx:id="profileBioField" prefHeight="80" wrapText="true" style="-fx-background-radius: 8; -fx-border-color: #E0E4F0; -fx-border-radius: 8; -fx-font-size: 13; -fx-padding: 8 12; -fx-background-color: #F7F8FA;"/>
+                    </VBox>
+                    <Button text="Save Profile" onAction="#handleSaveProfile" prefWidth="220" prefHeight="44" style="-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-background-radius: 10; -fx-font-size: 14; -fx-font-weight: bold; -fx-cursor: hand;"/>
+                    <Label fx:id="profileSaveStatus" text="" style="-fx-font-size: 12; -fx-text-fill: #A6E3A1;"/>
+                    <Button text="← Back" onAction="#handleProfileBack" prefWidth="220" prefHeight="40" style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 10; -fx-border-color: #E0E4F0; -fx-border-width: 1; -fx-font-size: 13; -fx-cursor: hand; -fx-border-radius: 10;"/>
+                </VBox>
+            </VBox>
+
+        </StackPane>
+    </center>
+
+    <bottom>
+        <HBox fx:id="statusBarHBox" spacing="18" alignment="CENTER_LEFT"
+              style="-fx-background-color: #FFFFFF; -fx-padding: 6 20; -fx-border-color: #E8EAF0; -fx-border-width: 1 0 0 0;">
+            <Label fx:id="statusFileName" text="No file open" style="-fx-text-fill: #8892B0; -fx-font-size: 11;"/>
+            <Label text="|" style="-fx-text-fill: #D0D5EA; -fx-font-size: 11;"/>
+            <Label fx:id="statusResolution" text="—" style="-fx-text-fill: #8892B0; -fx-font-size: 11;"/>
+            <Label text="|" style="-fx-text-fill: #D0D5EA; -fx-font-size: 11;"/>
+            <Label fx:id="statusZoom" text="Zoom: 100%" style="-fx-text-fill: #8892B0; -fx-font-size: 11;"/>
+        </HBox>
+    </bottom>
+</BorderPane>

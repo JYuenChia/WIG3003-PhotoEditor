@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.collections.FXCollections?>
+<?import java.lang.String?>
+
+<HBox xmlns:fx="http://javafx.com/fxml"
+      fx:id="videoCreatorPane"
+      fx:controller="com.mp.wig3003groupproject.VideoController"
+      style="-fx-background-color: #F7F8FA;">
+    
+    <!-- Center Workspace (Left) -->
+    <StackPane HBox.hgrow="ALWAYS" style="-fx-padding: 15;">
+        <VBox fx:id="videoDropZone" alignment="CENTER" spacing="15" 
+              style="-fx-background-color: #FFFFFF; -fx-background-radius: 20; -fx-border-color: #D8DEFF; -fx-border-width: 2; -fx-border-style: dashed; -fx-border-radius: 20;">
+            <Label text="►" style="-fx-font-size: 48; -fx-text-fill: #4F5BD5;"/>
+            <Label text="Drop Photos or Video Here" style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
+            <Label text="or click to browse your favorites" style="-fx-font-size: 13; -fx-text-fill: #8892B0;"/>
+            <Button text="Select Favourites" 
+                    style="-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-background-radius: 20; -fx-padding: 8 20; -fx-font-weight: bold; -fx-cursor: hand;"/>
+        </VBox>
+
+        <!-- Preview Player (Initially Hidden) -->
+        <VBox fx:id="videoPlayerContainer" visible="false" spacing="15" alignment="CENTER">
+            <StackPane fx:id="videoPreviewStack" style="-fx-background-color: black; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 5);">
+                <ImageView fx:id="videoPreviewImage" preserveRatio="true" fitWidth="600" fitHeight="340"/>
+                <Label fx:id="videoOverlayLabel" text="" wrapText="true" alignment="CENTER" textAlignment="CENTER"
+                       style="-fx-text-fill: white; -fx-font-size: 20; -fx-padding: 15; -fx-font-family: 'Georgia'; -fx-font-style: italic;"/>
+            </StackPane>
+
+            <!-- Playback Controls -->
+            <VBox spacing="8" style="-fx-padding: 0 40;">
+                <Slider fx:id="videoSeekBar" style="-fx-cursor: hand;"/>
+                <HBox spacing="15" alignment="CENTER">
+                    <Button text="⏮" style="-fx-background-color: transparent; -fx-font-size: 18; -fx-text-fill: #1A1D2E; -fx-cursor: hand;"/>
+                    <Button fx:id="btnVideoPlay" text="▶" onAction="#handleVideoPlayPause"
+                            style="-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-shape: 'M 0 0 L 20 10 L 0 20 Z'; -fx-min-width: 44; -fx-min-height: 44; -fx-cursor: hand;"/>
+                    <Button text="⏭" style="-fx-background-color: transparent; -fx-font-size: 18; -fx-text-fill: #1A1D2E; -fx-cursor: hand;"/>
+                </HBox>
+            </VBox>
+        </VBox>
+    </StackPane>
+
+    <!-- Functional Panel (Right) -->
+    <VBox spacing="15" prefWidth="320" minWidth="320" maxWidth="320"
+          style="-fx-background-color: #FFFFFF; -fx-border-color: #D0E8FF; -fx-border-width: 0 0 0 1; -fx-padding: 20; -fx-background-radius: 40 0 0 40; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif;">
+        
+        <HBox alignment="CENTER_LEFT" spacing="10">
+            <Label text="🎬 Video Lab" style="-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+        </HBox>
+
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent;">
+            <VBox spacing="20">
+                <!-- Compilation Section -->
+                <VBox spacing="12" style="-fx-background-color: #F8FAFF; -fx-padding: 15; -fx-background-radius: 15; -fx-border-color: #D9C8FF; -fx-border-radius: 15;">
+                    <Label text="COMPILATION" style="-fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #7A7A7A;"/>
+                    <Button text="Sync Favourites" onAction="#handleSyncFavourites" maxWidth="Infinity" 
+                            style="-fx-background-color: #EEF2FF; -fx-text-fill: #4F5BD5; -fx-font-weight: bold; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 10; -fx-cursor: hand;"/>
+                    <VBox spacing="5">
+                        <Label text="Frame Duration (sec)" style="-fx-font-size: 11; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-text-fill: #4A4A4A;"/>
+                        <Slider fx:id="videoDurationSlider" min="1" max="10" value="3" showTickLabels="true" showTickMarks="true"/>
+                    </VBox>
+                </VBox>
+
+                <!-- Overlay Section -->
+                <VBox spacing="12" style="-fx-background-color: #F8FAFF; -fx-padding: 15; -fx-background-radius: 15; -fx-border-color: #C8E8FF; -fx-border-radius: 15;">
+                    <Label text="CONTENT OVERLAY" style="-fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #7A7A7A;"/>
+                    <TextArea fx:id="videoOverlayText" promptText="Enter your poem or text here..." prefHeight="100" wrapText="true"
+                              style="-fx-background-radius: 10; -fx-padding: 5; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif;"/>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Text Color" style="-fx-font-size: 11; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif;"/>
+                        <ColorPicker fx:id="videoTextColorPicker" style="-fx-background-color: transparent;"/>
+                    </HBox>
+                </VBox>
+
+                <!-- Graphical Elements -->
+                <VBox spacing="12" style="-fx-background-color: #F8FAFF; -fx-padding: 15; -fx-background-radius: 15; -fx-border-color: #FFE8C8; -fx-border-radius: 15;">
+                    <Label text="GRAPHICS" style="-fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #7A7A7A;"/>
+                    <ComboBox fx:id="videoGraphicsCombo" promptText="Select Element" maxWidth="Infinity" style="-fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif;">
+                        <items>
+                            <FXCollections fx:factory="observableArrayList">
+                                <String fx:value="None" />
+                                <String fx:value="Floating Hearts" />
+                                <String fx:value="Classic Border" />
+                                <String fx:value="Vignette" />
+                            </FXCollections>
+                        </items>
+                    </ComboBox>
+                </VBox>
+
+                <!-- Export -->
+                <Button text="💾 Render &amp; Save Video" maxWidth="Infinity" minHeight="50"
+                        style="-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-background-radius: 12; -fx-font-weight: bold; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-cursor: hand;"/>
+            </VBox>
+        </ScrollPane>
+    </VBox>
+</HBox>

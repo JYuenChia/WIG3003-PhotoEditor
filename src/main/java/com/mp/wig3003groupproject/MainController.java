@@ -3,6 +3,7 @@ package com.mp.wig3003groupproject;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -28,79 +29,50 @@ import java.util.Properties;
 
 public class MainController {
 
-    @FXML private ToggleButton tabDashboard, tabGallery, tabDipEditor;
-    @FXML private ToggleButton tabObjectExtraction, tabMosaic, tabVideoCreator, tabShare;
-    @FXML private VBox sidebarVBox;
-
-    private boolean sidebarExpanded = true;
-
-    private static final String[][] SIDEBAR_DATA = {
-        {"⌂", "⌂  Dashboard"},
-        {"⊞", "⊞  Gallery"},
-        {"✦", "✦  DIP Editor"},
-        {"◧", "◧  Extraction"},
-        {"▦", "▦  Mosaic"},
-        {"►", "►  Video"},
-        {"↗", "↗  Share"}
-    };
-
-    // Structural elements required for Deep Dark Mode swaps
-    @FXML private StackPane mainContentStackPane;
-    @FXML private VBox dipWorkspaceBg;
-    @FXML private Label brandLabel;
-    @FXML private Button btnOpen, btnClear, btnUndo, btnRedo, btnZoomIn, btnZoomOut, btnSettings;
-
-    @FXML private VBox dashboardPane, galleryPane;
-    @FXML private VBox objectExtractionPane, mosaicPane, videoCreatorPane, shareContentPane, settingsPane;
-    @FXML private VBox userProfilePane;
-    @FXML private HBox dipEditorPane;
-
-    @FXML private TextField profileNameField, profileEmailField;
-    @FXML private TextArea profileBioField;
-    @FXML private Label profileInitialsLabel, profileDisplayName, profileSaveStatus;
-
-    @FXML private ImageView mainImageView;
-    @FXML private ScrollPane imageScrollPane;
-    @FXML private VBox uploadPlaceholder;
-
-    @FXML private TextField searchBar;
-    @FXML private BorderPane rootPane;
-    @FXML private HBox toolbarHBox;
-    @FXML private HBox statusBarHBox;
-    @FXML private Label statusFileName, statusResolution, statusZoom;
-
-    @FXML private VBox annotationBox;
-    @FXML private TextField annotationField;
-    @FXML private Label heartIcon;
-    @FXML private FlowPane galleryGrid;
-
-    private String currentImagePath = null;
-    private String currentFileHash = null; 
-    private Properties annotationsDB = new Properties();
-    private final String DB_FILE = "annotations_database.properties";
-    private List<String> editedFiles = new ArrayList<>();
-
-    private boolean darkMode = false;
-    private double zoomLevel = 1.0;
-    private String currentFileName = "No file open";
-
     private static MainController instance;
-    public MainController() { instance = this; }
-    public static MainController getInstance() { return instance; }
+
+    public MainController() {
+        instance = this;
+    }
+
+    public static MainController getInstance() {
+        return instance;
+    }
+
+    // --- FXML UI Fields ---
+    @FXML private BorderPane rootPane;
+    @FXML private HBox toolbarHBox, statusBarHBox;
+    @FXML private VBox sidebarVBox, dashboardPane, galleryPane, dipWorkspaceBg, uploadPlaceholder, annotationBox;
+    @FXML private VBox objectExtractionPane, mosaicPane, shareContentPane, settingsPane, userProfilePane;
+    @FXML private Node videoCreatorPaneContent;
+    @FXML private HBox dipEditorPane;
+    @FXML private StackPane mainContentStackPane;
+    @FXML private ScrollPane imageScrollPane;
+    @FXML private ImageView mainImageView;
+    @FXML private FlowPane galleryGrid;
+    
+    @FXML private Label brandLabel, heartIcon, profileInitialsLabel, profileDisplayName, profileSaveStatus;
+    @FXML private Label statusFileName, statusResolution, statusZoom;
+    @FXML private Button btnOpen, btnClear, btnUndo, btnRedo, btnZoomIn, btnZoomOut, btnSettings;
+    @FXML private TextField searchBar, annotationField, profileNameField, profileEmailField;
+    @FXML private TextArea profileBioField;
+    @FXML private ToggleButton tabDashboard, tabGallery, tabDipEditor, tabObjectExtraction, tabMosaic, tabVideoCreator, tabShare;
+
+    // --- State Fields ---
+    private String currentFileName = "No file open";
+    private String currentImagePath;
+    private String currentFileHash;
+    private double zoomLevel = 1.0;
+    private boolean darkMode = false;
+    private boolean sidebarExpanded = true;
+    private List<String> editedFiles = new ArrayList<>();
+    private Properties annotationsDB = new Properties();
+    private static final String DB_FILE = "photo_editor_db.properties";
 
     @FXML
     public void initialize() {
         loadDatabase();
-        mainImageView.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
-            DIPController dip = DIPController.getInstance();
-            if (dip != null && dip.isSelectionMode() && mainImageView.getImage() != null) {
-                dip.saveState();
-                double ratioX = mainImageView.getImage().getWidth() / mainImageView.getBoundsInLocal().getWidth();
-                double ratioY = mainImageView.getImage().getHeight() / mainImageView.getBoundsInLocal().getHeight();
-                dip.selectSimilarColors(event.getX() * ratioX, event.getY() * ratioY);
-            }
-        });
-        updateStatusBar();
+        applyTheme();
     }
 
     @FXML public void showDashboard()        { switchPane("dashboard"); }
@@ -110,51 +82,49 @@ public class MainController {
     @FXML public void showMosaic()           { switchPane("mosaic"); }
     @FXML public void showVideoCreator()     { switchPane("videoCreator"); }
     @FXML public void showShare()            { switchPane("share"); }
-    @FXML public void showSettings()         { switchPane("settings"); }
 
-    @FXML public void handleSidebarToggle() {
-        sidebarExpanded = !sidebarExpanded;
-        ToggleButton[] allTabs = {tabDashboard, tabGallery, tabDipEditor, tabObjectExtraction, tabMosaic, tabVideoCreator, tabShare};
-
-        if (sidebarExpanded) {
-            sidebarVBox.setPrefWidth(220); sidebarVBox.setMinWidth(220);
-            for (int i = 0; i < allTabs.length; i++) allTabs[i].setText(SIDEBAR_DATA[i][1]);
-        } else {
-            sidebarVBox.setPrefWidth(60); sidebarVBox.setMinWidth(60);
-            for (int i = 0; i < allTabs.length; i++) allTabs[i].setText(SIDEBAR_DATA[i][0]);
+    private void switchPane(String paneName) {
+        dashboardPane.setVisible("dashboard".equals(paneName));
+        dashboardPane.setManaged("dashboard".equals(paneName));
+        galleryPane.setVisible("gallery".equals(paneName));
+        galleryPane.setManaged("gallery".equals(paneName));
+        dipEditorPane.setVisible("dipEditor".equals(paneName));
+        dipEditorPane.setManaged("dipEditor".equals(paneName));
+        objectExtractionPane.setVisible("objectExtraction".equals(paneName));
+        objectExtractionPane.setManaged("objectExtraction".equals(paneName));
+        mosaicPane.setVisible("mosaic".equals(paneName));
+        mosaicPane.setManaged("mosaic".equals(paneName));
+        if (videoCreatorPaneContent != null) {
+            videoCreatorPaneContent.setVisible("videoCreator".equals(paneName));
+            videoCreatorPaneContent.setManaged("videoCreator".equals(paneName));
         }
-        for (ToggleButton t : allTabs) t.setStyle(t.isSelected() ? buildActiveStyle() : buildInactiveStyle());
+        shareContentPane.setVisible("share".equals(paneName));
+        shareContentPane.setManaged("share".equals(paneName));
+        settingsPane.setVisible("settings".equals(paneName));
+        settingsPane.setManaged("settings".equals(paneName));
+        userProfilePane.setVisible("userProfile".equals(paneName));
+        userProfilePane.setManaged("userProfile".equals(paneName));
+
+        // Update sidebar visual feedback
+        applyTheme();
     }
 
     private String buildActiveStyle() {
-        if (darkMode) return "-fx-background-color: #1E2333; -fx-text-fill: #E2E8F0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;";
-        return "-fx-background-color: #2E3250; -fx-text-fill: #CDD6F4; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;";
+        return darkMode 
+            ? "-fx-background-color: #2E3250; -fx-text-fill: #CDD6F4; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
+            : "-fx-background-color: #2E3250; -fx-text-fill: #CDD6F4; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;";
     }
 
     private String buildInactiveStyle() {
-        if (darkMode) return "-fx-background-color: transparent; -fx-text-fill: #64748B; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;";
-        return "-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;";
+        return darkMode
+            ? "-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
+            : "-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;";
     }
 
-    private void switchPane(String name) {
-        VBox[] allVBoxPanes = {dashboardPane, galleryPane, objectExtractionPane, mosaicPane, videoCreatorPane, shareContentPane, settingsPane, userProfilePane};
-        for (VBox p : allVBoxPanes) { p.setVisible(false); p.setManaged(false); }
-        dipEditorPane.setVisible(false); dipEditorPane.setManaged(false);
-
-        ToggleButton[] allTabs = {tabDashboard, tabGallery, tabDipEditor, tabObjectExtraction, tabMosaic, tabVideoCreator, tabShare};
-        for (ToggleButton t : allTabs) t.setStyle(buildInactiveStyle());
-
-        switch (name) {
-            case "dashboard"        -> { dashboardPane.setVisible(true);        dashboardPane.setManaged(true);        tabDashboard.setStyle(buildActiveStyle()); }
-            case "gallery"          -> { galleryPane.setVisible(true);          galleryPane.setManaged(true);          tabGallery.setStyle(buildActiveStyle()); }
-            case "dipEditor"        -> { dipEditorPane.setVisible(true);        dipEditorPane.setManaged(true);        tabDipEditor.setStyle(buildActiveStyle()); }
-            case "objectExtraction" -> { objectExtractionPane.setVisible(true); objectExtractionPane.setManaged(true); tabObjectExtraction.setStyle(buildActiveStyle()); }
-            case "mosaic"           -> { mosaicPane.setVisible(true);           mosaicPane.setManaged(true);           tabMosaic.setStyle(buildActiveStyle()); }
-            case "videoCreator"     -> { videoCreatorPane.setVisible(true);     videoCreatorPane.setManaged(true);     tabVideoCreator.setStyle(buildActiveStyle()); }
-            case "share"            -> { shareContentPane.setVisible(true);     shareContentPane.setManaged(true);     tabShare.setStyle(buildActiveStyle()); }
-            case "settings"         -> { settingsPane.setVisible(true);         settingsPane.setManaged(true); }
-            case "userProfile"      -> { userProfilePane.setVisible(true);      userProfilePane.setManaged(true); }
-        }
+    @FXML
+    public void handleSidebarToggle() {
+        sidebarExpanded = !sidebarExpanded;
+        applyTheme();
     }
 
     @FXML public void handleOpenImage() {
@@ -408,104 +378,61 @@ public class MainController {
         if (file.exists()) {
             try (FileInputStream fis = new FileInputStream(file)) {
                 annotationsDB.load(fis);
-                String history = annotationsDB.getProperty("SYS_EDITED_FILES", "");
-                if (!history.isEmpty()) editedFiles.addAll(Arrays.asList(history.split(";;")));
-            } catch (IOException e) { System.err.println(e.getMessage()); }
+                for (String key : annotationsDB.stringPropertyNames()) {
+                    if (key.startsWith("path_")) {
+                        String path = annotationsDB.getProperty(key);
+                        if (new File(path).exists() && !editedFiles.contains(path)) editedFiles.add(path);
+                    }
+                }
+            } catch (Exception e) { System.err.println("DB Load Error: " + e.getMessage()); }
         }
     }
 
     private void saveDatabase() {
-        annotationsDB.setProperty("SYS_EDITED_FILES", String.join(";;", editedFiles));
-        try (FileOutputStream fos = new FileOutputStream(DB_FILE)) { annotationsDB.store(fos, "PixelForge Annotations Database"); } 
-        catch (IOException e) { System.err.println(e.getMessage()); }
+        for (int i = 0; i < editedFiles.size(); i++) annotationsDB.setProperty("path_" + i, editedFiles.get(i));
+        try (FileOutputStream fos = new FileOutputStream(DB_FILE)) {
+            annotationsDB.store(fos, "PhotoEditor Database");
+        } catch (Exception e) { System.err.println("DB Save Error: " + e.getMessage()); }
     }
 
-    private void refreshGallery(String searchQuery) {
-        if (galleryGrid == null) return;
+    // --- Gallery Logic ---
+    private void refreshGallery(String filter) {
         galleryGrid.getChildren().clear();
-        String query = searchQuery.toLowerCase().trim();
-
         for (String path : editedFiles) {
             File f = new File(path);
-            if (!f.exists()) continue;
+            String hash = getFileHash(f);
+            String note = annotationsDB.getProperty(hash, "").toLowerCase();
+            
+            if (!filter.isEmpty() && !f.getName().toLowerCase().contains(filter.toLowerCase()) && !note.contains(filter.toLowerCase())) continue;
 
-            String fileHash = getFileHash(f);
-            String annotation = annotationsDB.getProperty(fileHash, "");
-
-            if (!query.isEmpty() && !f.getName().toLowerCase().contains(query) && !annotation.toLowerCase().contains(query)) continue;
-
-            Image thumbImg = new Image(f.toURI().toString(), 220, 140, true, true);
-            ImageView thumbView = new ImageView(thumbImg);
-            thumbView.setPreserveRatio(true);
-            thumbView.setFitWidth(200);
-            thumbView.setFitHeight(120);
-
-            StackPane imageContainer = new StackPane(thumbView);
-            imageContainer.setMinSize(220, 140);
-            imageContainer.setMaxSize(220, 140);
-            imageContainer.setStyle("-fx-background-color: #F0F2F8; -fx-background-radius: 8;");
-
-            StackPane overlay = new StackPane(imageContainer);
-            if (annotationsDB.containsKey(fileHash)) {
-                Label galleryHeart = new Label("♥");
-                galleryHeart.setStyle("-fx-text-fill: #F38BA8; -fx-font-size: 24; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 4, 0.5, 0, 0);");
-                StackPane.setAlignment(galleryHeart, Pos.TOP_RIGHT);
-                StackPane.setMargin(galleryHeart, new Insets(5, 5, 0, 0));
-                overlay.getChildren().add(galleryHeart);
-            }
-
-            Label nameLabel = new Label(f.getName().length() > 25 ? f.getName().substring(0, 22) + "…" : f.getName());
-            nameLabel.setStyle("-fx-font-size: 11; -fx-text-fill: #8892B0; -fx-padding: 8 0 0 0;");
-
-            VBox card = new VBox(0, overlay, nameLabel);
+            VBox card = new VBox(8);
             card.setAlignment(Pos.CENTER);
-            card.setStyle("-fx-background-color: white; -fx-padding: 12; -fx-background-radius: 14; -fx-cursor: hand; -fx-border-color: #E8EAF0; -fx-border-width: 1; -fx-border-radius: 14; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 3);");
+            card.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 10; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 8, 0, 0, 2);");
 
-            card.setOnMouseClicked(e -> {
-                if (e.getClickCount() == 2) showPreviewPopup(path, annotationsDB.getProperty(fileHash, "No annotation provided."));
-            });
+            StackPane imgStack = new StackPane();
+            ImageView iv = new ImageView(new Image(f.toURI().toString()));
+            iv.setFitWidth(140); iv.setFitHeight(110); iv.setPreserveRatio(true);
+            
+            if (annotationsDB.containsKey(hash)) {
+                Label h = new Label("♥");
+                h.setStyle("-fx-text-fill: #F38BA8; -fx-font-size: 18;");
+                StackPane.setAlignment(h, Pos.TOP_RIGHT);
+                imgStack.getChildren().addAll(iv, h);
+            } else imgStack.getChildren().add(iv);
 
+            Label name = new Label(f.getName());
+            name.setStyle("-fx-font-size: 11; -fx-text-fill: #1A1D2E; -fx-font-weight: bold;");
+            name.setMaxWidth(140);
+            
+            card.getChildren().addAll(imgStack, name);
+            card.setCursor(javafx.scene.Cursor.HAND);
+            card.setOnMouseClicked(e -> { loadImage(f); switchPane("dipEditor"); tabDipEditor.setSelected(true); });
             galleryGrid.getChildren().add(card);
         }
     }
 
-    private void showPreviewPopup(String path, String note) {
-        Stage previewStage = new Stage();
-        previewStage.setTitle("Preview — " + new File(path).getName());
-        ImageView previewView = new ImageView(new Image(new File(path).toURI().toString()));
-        previewView.setPreserveRatio(true);
-        previewView.setFitWidth(720);
-        previewView.setFitHeight(520);
-        previewView.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 24, 0, 0, 6);");
-
-        Label noteTitle = new Label("Annotation");
-        noteTitle.setStyle("-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #8892B0;");
-        Label noteLabel = new Label(note);
-        noteLabel.setWrapText(true);
-        noteLabel.setStyle("-fx-font-size: 14; -fx-text-fill: #1A1D2E;");
-        
-        Button editBtn = new Button("✎ Edit Image");
-        editBtn.setStyle("-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-padding: 8 16; -fx-cursor: hand;");
-        editBtn.setOnAction(e -> {
-            previewStage.close();
-            loadImage(new File(path));
-            switchPane("dipEditor");
-            tabDipEditor.setSelected(true);
-        });
-
-        HBox titleBox = new HBox(noteTitle, new Region(), editBtn);
-        HBox.setHgrow(titleBox.getChildren().get(1), Priority.ALWAYS);
-
-        VBox textContainer = new VBox(10, titleBox, noteLabel);
-        textContainer.setStyle("-fx-background-color: #F7F8FA; -fx-padding: 16 20; -fx-background-radius: 12; -fx-border-color: #E8EAF0; -fx-border-width: 1; -fx-border-radius: 12;");
-        
-        VBox layout = new VBox(20, previewView, textContainer);
-        layout.setAlignment(Pos.CENTER);
-        layout.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 32;");
-
-        previewStage.setScene(new Scene(layout));
-        previewStage.show();
-    }
-    
+    // --- Data Accessors for Sub-Controllers ---
+    public List<String> getEditedFiles() { return editedFiles; }
+    public Properties getAnnotationsDB() { return annotationsDB; }
     public ImageView getImageView() { return mainImageView; }
 }

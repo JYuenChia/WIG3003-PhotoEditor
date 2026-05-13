@@ -2,6 +2,8 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.collections.FXCollections?>
+<?import java.lang.String?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml"
             fx:id="rootPane"
@@ -12,28 +14,28 @@
         <HBox fx:id="toolbarHBox" spacing="10" alignment="CENTER_LEFT"
               style="-fx-background-color: #FFFFFF; -fx-padding: 10 20; -fx-border-color: #E8EAF0; -fx-border-width: 0 0 1 0; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 8, 0, 0, 2);">
 
-            <HBox alignment="CENTER_LEFT" prefWidth="220" minWidth="220" maxWidth="220">
-                <Label fx:id="brandLabel" text="✦PhotoEditor✦" style="-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
+            <HBox alignment="CENTER_LEFT" prefWidth="180" minWidth="180" maxWidth="180">
+                <Label fx:id="brandLabel" text="✦PhotoEditor✦" style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
             </HBox>
             
             <Separator orientation="VERTICAL" style="-fx-background-color: #E0E4F0; -fx-pref-height: 22;"/>
 
-            <Button fx:id="btnOpen" text="⊕ Open File" onAction="#handleOpenImage" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
-            <Button fx:id="btnClear" text="✕ Clear" onAction="#handleDelete" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
+            <Button fx:id="btnOpen" text="Open" onAction="#handleOpenImage" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
+            <Button fx:id="btnClear" text="Clear" onAction="#handleDelete" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
             
             <Separator orientation="VERTICAL" style="-fx-background-color: #E0E4F0; -fx-pref-height: 22;"/>
 
-            <Button fx:id="btnUndo" text="↩ Undo" onAction="#handleUndo" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
-            <Button fx:id="btnRedo" text="↪ Redo" onAction="#handleRedo" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
+            <Button fx:id="btnUndo" text="Undo" onAction="#handleUndo" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
+            <Button fx:id="btnRedo" text="Redo" onAction="#handleRedo" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
             
             <Separator orientation="VERTICAL" style="-fx-background-color: #E0E4F0; -fx-pref-height: 22;"/>
 
-            <Button fx:id="btnZoomIn" text="+ Zoom In" onAction="#handleZoomIn" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
-            <Button fx:id="btnZoomOut" text="- Zoom Out" onAction="#handleZoomOut" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
+            <Button fx:id="btnZoomIn" text="In" onAction="#handleZoomIn" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
+            <Button fx:id="btnZoomOut" text="Out" onAction="#handleZoomOut" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
 
             <Region HBox.hgrow="ALWAYS"/>
 
-            <TextField fx:id="searchBar" promptText="🔍  Search Gallery..." prefWidth="240" prefHeight="34"
+            <TextField fx:id="searchBar" promptText="🔍 Search..." prefWidth="160" prefHeight="34"
                        onAction="#handleSearch"
                        style="-fx-background-radius: 20; -fx-background-color: #F0F2F8; -fx-border-color: #E0E4F0; -fx-border-radius: 20; -fx-padding: 4 14; -fx-font-size: 12; -fx-text-fill: #3D4155;"/>
 
@@ -45,10 +47,10 @@
 
     <left>
         <VBox fx:id="sidebarVBox" spacing="8"
-              style="-fx-background-color: #1A1D2E; -fx-padding: 16 10; -fx-min-width: 220; -fx-pref-width: 220;">
+              style="-fx-background-color: #1A1D2E; -fx-padding: 16 10; -fx-min-width: 180; -fx-pref-width: 180;">
 
             <Button text="☰" onAction="#handleSidebarToggle" maxWidth="Infinity"
-                    style="-fx-background-color: transparent; -fx-font-size: 22; -fx-text-fill: #8892B0; -fx-padding: 4 0 20 8; -fx-cursor: hand; -fx-alignment: CENTER_LEFT;"/>
+                    style="-fx-background-color: transparent; -fx-font-size: 20; -fx-text-fill: #8892B0; -fx-padding: 4 0 15 8; -fx-cursor: hand; -fx-alignment: CENTER_LEFT;"/>
 
             <fx:define>
                 <ToggleGroup fx:id="sidebarGroup"/>
@@ -180,7 +182,8 @@
 
             <VBox fx:id="objectExtractionPane" alignment="CENTER" spacing="16" visible="false" managed="false" style="-fx-padding: 60;"><Label text="◧" style="-fx-font-size: 64; -fx-text-fill: #4F5BD5;"/><Label text="Object Extraction" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #4F5BD5;"/></VBox>
             <VBox fx:id="mosaicPane" alignment="CENTER" spacing="16" visible="false" managed="false" style="-fx-padding: 60;"><Label text="▦" style="-fx-font-size: 64; -fx-text-fill: #4F5BD5;"/><Label text="Mosaic Generator" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #4F5BD5;"/></VBox>
-            <VBox fx:id="videoCreatorPane" alignment="CENTER" spacing="16" visible="false" managed="false" style="-fx-padding: 60;"><Label text="►" style="-fx-font-size: 64; -fx-text-fill: #4F5BD5;"/><Label text="Video Creator" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #4F5BD5;"/></VBox>
+            <!-- Video Creator Content -->
+            <fx:include source="video-view.fxml" fx:id="videoCreatorPaneContent" visible="false" managed="false"/>
             <VBox fx:id="shareContentPane" alignment="CENTER" spacing="16" visible="false" managed="false" style="-fx-padding: 60;"><Label text="↗ Share" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #4F5BD5;"/></VBox>
 
             <VBox fx:id="settingsPane" alignment="CENTER" spacing="24" visible="false" managed="false" style="-fx-padding: 60;">

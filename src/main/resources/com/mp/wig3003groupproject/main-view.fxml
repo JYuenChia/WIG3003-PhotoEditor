@@ -109,6 +109,16 @@
                 </graphic>
             </ToggleButton>
 
+            <ToggleButton fx:id="tabShare" toggleGroup="$sidebarGroup" onAction="#showShareTab" maxWidth="Infinity" styleClass="sidebar-button"
+                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-padding: 0; -fx-alignment: CENTER_LEFT; -fx-cursor: hand; -fx-min-height: 50;">
+                <graphic>
+                    <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-padding: 10 16;">
+                        <Label text="✉" style="-fx-font-size: 20; -fx-min-width: 30; -fx-alignment: CENTER;"/>
+                        <Label fx:id="lblShare" text="Share File" style="-fx-font-size: 15; -fx-font-weight: bold;"/>
+                    </HBox>
+                </graphic>
+            </ToggleButton>
+
             <Region VBox.vgrow="ALWAYS"/>
         </VBox>
     </left>
@@ -158,6 +168,8 @@
                 </HBox>
             </VBox>
 
+            <fx:include source="share-view.fxml" fx:id="shareContentPane" visible="false" managed="false"/>
+            
             <VBox fx:id="galleryPane" alignment="TOP_CENTER" spacing="0" visible="false" managed="false">
                 <HBox alignment="CENTER_LEFT" spacing="12"
                       style="-fx-background-color: transparent; -fx-padding: 18 28;">

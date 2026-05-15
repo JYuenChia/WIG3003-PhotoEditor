@@ -39,6 +39,13 @@
             <version>${javafx.version}</version>
         </dependency>
 
+        <!-- Jakarta Mail for Direct Email API -->
+        <dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>jakarta.mail</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -72,7 +79,7 @@
                     <execution>
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>com.mp.wig3003groupproject.PhotoEditor</mainClass>
+                            <mainClass>com.mp.wig3003groupproject/com.mp.wig3003groupproject.PhotoEditor</mainClass>
                         </configuration>
                     </execution>
                 </executions>

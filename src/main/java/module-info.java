@@ -4,6 +4,7 @@ module com.mp.wig3003groupproject {
     requires java.desktop;
     requires javafx.swing;
     requires javafx.media;
+    requires jakarta.mail;
 
     opens com.mp.wig3003groupproject to javafx.fxml;
     exports com.mp.wig3003groupproject;

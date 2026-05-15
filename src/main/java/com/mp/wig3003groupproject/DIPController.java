@@ -14,8 +14,8 @@ import java.io.File;
 import java.util.Stack;
 
 public class DIPController {
-    @FXML private Slider brightnessSlider, contrastSlider, borderThicknessSlider, borderRoundSlider;
-    @FXML private Label brightnessLabel, contrastLabel;
+    @FXML private Slider brightnessSlider, contrastSlider, transparencySlider, borderThicknessSlider, borderRoundSlider;
+    @FXML private Label brightnessLabel, contrastLabel, transparencyLabel;
     @FXML private Button grayscaleBtn, borderToggleBtn;
     @FXML private ToggleButton selectionToggle;
     @FXML private VBox borderControlsBox, downloadContainer;
@@ -37,16 +37,21 @@ public class DIPController {
     @FXML
     public void initialize() {
         brightnessSlider.valueProperty().addListener((o, old, v) -> {
-            brightnessLabel.setText(Math.round(v.doubleValue() * 100) + "%");
+            if (brightnessLabel != null) brightnessLabel.setText(Math.round(v.doubleValue() * 100) + "%");
             applyDIP();
         });
         contrastSlider.valueProperty().addListener((o, old, v) -> {
-            contrastLabel.setText(Math.round(v.doubleValue() * 100) + "%");
+            if (contrastLabel != null) contrastLabel.setText(Math.round(v.doubleValue() * 100) + "%");
+            applyDIP();
+        });
+        transparencySlider.valueProperty().addListener((o, old, v) -> {
+            if (transparencyLabel != null) transparencyLabel.setText(Math.round(v.doubleValue() * 100) + "%");
             applyDIP();
         });
         
         brightnessSlider.setOnMousePressed(e -> saveState());
         contrastSlider.setOnMousePressed(e -> saveState());
+        transparencySlider.setOnMousePressed(e -> saveState());
         borderThicknessSlider.setOnMousePressed(e -> saveState());
         borderRoundSlider.setOnMousePressed(e -> saveState());
 
@@ -67,14 +72,27 @@ public class DIPController {
         });
     }
 
+    @FXML public void showShareTab() {
+        MainController.getInstance().showShareTab();
+    }
+
     public void onImageLoaded(Image img) {
         this.originalImage = img;
         this.currentBaseImage = img;
+        MainController.getInstance().setCurrentDisplayedImage(img);
         widthField.setText(String.valueOf((int)img.getWidth()));
         heightField.setText(String.valueOf((int)img.getHeight()));
         downloadContainer.setVisible(true);
         undoStack.clear();
         redoStack.clear();
+    }
+
+    private Image resolveSourceImage() {
+        if (currentBaseImage != null) return currentBaseImage;
+        if (MainController.getInstance() != null && MainController.getInstance().getImageView() != null) {
+            return MainController.getInstance().getImageView().getImage();
+        }
+        return null;
     }
 
     public void saveState() {
@@ -89,6 +107,7 @@ public class DIPController {
             redoStack.push(MainController.getInstance().getImageView().getImage());
             Image prev = undoStack.pop();
             MainController.getInstance().getImageView().setImage(prev);
+            MainController.getInstance().setCurrentDisplayedImage(prev);
             this.currentBaseImage = prev;
         }
     }
@@ -98,6 +117,7 @@ public class DIPController {
             undoStack.push(MainController.getInstance().getImageView().getImage());
             Image next = redoStack.pop();
             MainController.getInstance().getImageView().setImage(next);
+            MainController.getInstance().setCurrentDisplayedImage(next);
             this.currentBaseImage = next;
         }
     }
@@ -109,6 +129,7 @@ public class DIPController {
     public void clearUI() {
         brightnessSlider.setValue(0);
         contrastSlider.setValue(0);
+        transparencySlider.setValue(1.0);
         isGrayscale = false;
         isBorderActive = false;
         
@@ -126,6 +147,7 @@ public class DIPController {
         borderThicknessSlider.setValue(25);
         borderRoundSlider.setValue(0);
         activeBorderColor = Color.WHITE;
+        if (transparencyLabel != null) transparencyLabel.setText("100%");
     }
 
     @FXML
@@ -160,19 +182,24 @@ public class DIPController {
         downloadContainer.setVisible(true); // Keep visible since image is still loaded
         currentBaseImage = originalImage;
         MainController.getInstance().getImageView().setImage(originalImage);
+        MainController.getInstance().setCurrentDisplayedImage(originalImage);
         applyDIP();
     }
 
     private void applyDIP() {
         ImageView view = MainController.getInstance().getImageView();
-        if (view == null || currentBaseImage == null) return;
+        Image sourceImage = resolveSourceImage();
+        if (view == null || sourceImage == null) return;
+
+        currentBaseImage = sourceImage;
 
         double b = brightnessSlider.getValue(), c = contrastSlider.getValue() + 1.0;
+        double alpha = transparencySlider.getValue();
         double t = borderThicknessSlider.getValue(), r = borderRoundSlider.getValue();
         String pattern = patternCombo.getValue();
 
-        int w = (int)currentBaseImage.getWidth(), h = (int)currentBaseImage.getHeight();
-        PixelReader pr = currentBaseImage.getPixelReader();
+        int w = (int)sourceImage.getWidth(), h = (int)sourceImage.getHeight();
+        PixelReader pr = sourceImage.getPixelReader();
         WritableImage wImg = new WritableImage(w, h);
         PixelWriter pw = wImg.getPixelWriter();
 
@@ -194,23 +221,24 @@ public class DIPController {
                     if (pattern.equals("Polka Dots")) {
                         int space = 20, size = 6;
                         int shift = (y / space % 2 == 0) ? 0 : space / 2;
-                        if ((x + shift) % space < size && y % space < size) pw.setColor(x, y, Color.WHITE);
-                        else pw.setColor(x, y, activeBorderColor);
+                        if ((x + shift) % space < size && y % space < size) pw.setColor(x, y, Color.WHITE.deriveColor(0, 1, 1, alpha));
+                        else pw.setColor(x, y, activeBorderColor.deriveColor(0, 1, 1, alpha));
                     } else if (pattern.equals("Stripes")) {
-                        if ((x + y) % 20 < 10) pw.setColor(x, y, activeBorderColor);
-                        else pw.setColor(x, y, activeBorderColor.deriveColor(0, 0.7, 1.2, 1));
+                        if ((x + y) % 20 < 10) pw.setColor(x, y, activeBorderColor.deriveColor(0, 1, 1, alpha));
+                        else pw.setColor(x, y, activeBorderColor.deriveColor(0, 0.7, 1.2, alpha));
                     } else if (pattern.equals("Gradient")) {
-                        pw.setColor(x, y, activeBorderColor.interpolate(Color.BLACK, (double)y/h * 0.5));
-                    } else pw.setColor(x, y, activeBorderColor);
+                        pw.setColor(x, y, activeBorderColor.interpolate(Color.BLACK, (double)y/h * 0.5).deriveColor(0, 1, 1, alpha));
+                    } else pw.setColor(x, y, activeBorderColor.deriveColor(0, 1, 1, alpha));
                 } else {
                     Color col = pr.getColor(x, y);
                     double rv = col.getRed(), gv = col.getGreen(), bv = col.getBlue();
                     if (isGrayscale) { double gray = (rv + gv + bv) / 3.0; rv = gv = bv = gray; }
-                    pw.setColor(x, y, new Color(Math.min(1.0, Math.max(0.0, rv * c + b)), Math.min(1.0, Math.max(0.0, gv * c + b)), Math.min(1.0, Math.max(0.0, bv * c + b)), col.getOpacity()));
+                    pw.setColor(x, y, new Color(Math.min(1.0, Math.max(0.0, rv * c + b)), Math.min(1.0, Math.max(0.0, gv * c + b)), Math.min(1.0, Math.max(0.0, bv * c + b)), Math.min(1.0, Math.max(0.0, col.getOpacity() * alpha))));
                 }
             }
         }
         view.setImage(wImg);
+        MainController.getInstance().setCurrentDisplayedImage(wImg);
     }
 
     public void selectSimilarColors(double x, double y) {
@@ -229,6 +257,7 @@ public class DIPController {
             }
         }
         MainController.getInstance().getImageView().setImage(wImg);
+        MainController.getInstance().setCurrentDisplayedImage(wImg);
     }
 
     @FXML public void handleResize() { 

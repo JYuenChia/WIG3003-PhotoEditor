@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="20.0" style="-fx-background-color: #F7F8FA; -fx-padding: 30;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mp.wig3003groupproject.MainController">
+    <children>
+        <VBox spacing="8">
+            <Label text="Share from Gallery" style="-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: #1F2937;" />
+            <Label text="Select a saved image or video from the in-app gallery and send it by email." style="-fx-text-fill: #6B7280; -fx-font-size: 14;" />
+        </VBox>
+
+        <HBox spacing="24" VBox.vgrow="ALWAYS">
+            <VBox spacing="10" prefWidth="350">
+                <Label text="Gallery" style="-fx-font-weight: bold; -fx-text-fill: #374151;" />
+                <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-border-color: #E5E7EB; -fx-border-radius: 8;">
+                    <VBox fx:id="shareGalleryContainer" spacing="10" style="-fx-padding: 10; -fx-background-color: white;">
+                        <Label text="No saved files yet." style="-fx-text-fill: #9CA3AF; -fx-font-style: italic;" />
+                    </VBox>
+                </ScrollPane>
+            </VBox>
+
+            <VBox spacing="15" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-padding: 25; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 10, 0, 0, 4);">
+                <VBox spacing="5">
+                    <Label text="Recipient Email" style="-fx-font-weight: bold;" />
+                    <TextField fx:id="emailRecipientField" promptText="e.g. friend@example.com" prefHeight="40" style="-fx-background-radius: 8;" />
+                </VBox>
+
+                <VBox spacing="5">
+                    <Label text="Subject" style="-fx-font-weight: bold;" />
+                    <TextField fx:id="emailSubjectField" promptText="Check out my edited media!" prefHeight="40" style="-fx-background-radius: 8;" />
+                </VBox>
+
+                <VBox spacing="5">
+                    <Label text="Message (Optional)" style="-fx-font-weight: bold;" />
+                    <TextArea fx:id="emailMessageField" prefHeight="100" promptText="Hi! I edited this using PhotoEditor..." wrapText="true" style="-fx-background-radius: 8;" />
+                </VBox>
+
+                <VBox fx:id="selectedFileIndicator" spacing="5" style="-fx-padding: 10; -fx-background-color: #F3F4F6; -fx-background-radius: 8;" visible="false">
+                    <Label text="Selected Attachment:" style="-fx-font-size: 11; -fx-text-fill: #6B7280;" />
+                    <Label fx:id="selectedFileNameLabel" text="No file selected" style="-fx-font-weight: bold; -fx-text-fill: #4F5BD5;" />
+                </VBox>
+
+                <Region VBox.vgrow="ALWAYS" />
+
+                <Button fx:id="btnSendEmail" onAction="#handleActualEmailSend" text="🚀 Send with Attachment" prefHeight="50" maxWidth="Infinity"
+                        style="-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 15; -fx-background-radius: 10; -fx-cursor: hand;" />
+                <Label fx:id="emailStatusLabel" text="" style="-fx-text-fill: #10B981; -fx-font-weight: bold;" alignment="CENTER" maxWidth="Infinity" />
+            </VBox>
+        </HBox>
+    </children>
+</VBox>

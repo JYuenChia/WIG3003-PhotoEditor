@@ -14,6 +14,8 @@ import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.util.Duration;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -336,6 +338,8 @@ public class VideoController {
         fc.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Video Files", "*.mp4", "*.mkv", "*.avi"));
         File file = fc.showOpenDialog(null);
         if (file != null) {
+            MainController.getInstance().setCurrentImagePath(file.getAbsolutePath());
+            MainController.getInstance().setCurrentFileName(file.getName());
             isVideoMode = true;
             videoPhotos.clear();
             photoDurations.clear();
@@ -791,7 +795,10 @@ public class VideoController {
         return total;
     }
 
-    @FXML
+    @FXML public void showShareTab() {
+        MainController.getInstance().showShareTab();
+    }
+
     public void handleRenderSave() {
         if (videoPhotos.isEmpty() && !isVideoMode) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
@@ -801,36 +808,58 @@ public class VideoController {
         }
 
         javafx.stage.FileChooser fc = new javafx.stage.FileChooser();
-        fc.setTitle("Save Rendered Video");
+        fc.setTitle("Save Video Locally");
         fc.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("MP4 Video", "*.mp4"));
         fc.setInitialFileName("my_creation.mp4");
         File file = fc.showSaveDialog(null);
 
         if (file != null) {
-            // Update MainController state for sharing
-            MainController.getInstance().setCurrentImagePath(file.getAbsolutePath());
-            MainController.getInstance().setCurrentFileName(file.getName());
+            try {
+                File source = resolveCurrentVideoSource();
+                if (source == null || !source.exists()) {
+                    Alert alert = new Alert(Alert.AlertType.WARNING);
+                    alert.setTitle("No Source Video");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Please upload a video first so it can be exported.");
+                    alert.showAndWait();
+                    return;
+                }
 
-            // Simulate rendering process
-            Alert progress = new Alert(Alert.AlertType.INFORMATION);
-            progress.setTitle("Rendering Video");
-            progress.setHeaderText("Processing your creation...");
-            progress.setContentText("Please wait while we encode your video and overlay elements.");
-            
-            // Show success after a simulated delay or immediately
-            progress.show();
-            
-            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(1.5));
-            pause.setOnFinished(e -> {
-                progress.close();
+                File target = ensureExtension(file, ".mp4");
+                Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                MainController.getInstance().setCurrentImagePath(target.getAbsolutePath());
+                MainController.getInstance().setCurrentFileName(target.getName());
+
                 Alert success = new Alert(Alert.AlertType.INFORMATION);
                 success.setTitle("Success");
                 success.setHeaderText(null);
-                success.setContentText("Video rendered and saved successfully to: " + file.getAbsolutePath());
-                success.show();
-            });
-            pause.play();
+                success.setContentText("Video saved successfully to: " + target.getAbsolutePath());
+                success.showAndWait();
+            } catch (IOException e) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Save Error");
+                alert.setHeaderText(null);
+                alert.setContentText("Could not save the video locally.");
+                alert.showAndWait();
+            }
         }
+    }
+
+    @FXML public void handleSaveToGallery() {
+        MainController.getInstance().handleSaveToGallery();
+    }
+
+    private File resolveCurrentVideoSource() {
+        String currentPath = MainController.getInstance().getCurrentImagePath();
+        if (currentPath == null || currentPath.isBlank()) return null;
+        File file = new File(currentPath);
+        return file.exists() ? file : null;
+    }
+
+    private File ensureExtension(File file, String extension) {
+        if (file.getName().toLowerCase().endsWith(extension.toLowerCase())) return file;
+        String parent = file.getParent();
+        return parent == null ? new File(file.getName() + extension) : new File(parent, file.getName() + extension);
     }
 
     private String getFileHash(File file) {

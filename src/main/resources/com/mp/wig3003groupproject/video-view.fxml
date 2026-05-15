@@ -31,24 +31,25 @@
                     </graphic>
                 </Button>
 
-                <Button onAction="#handleSelectPhotos" 
+                <Button onAction="#handleSyncFavourites" 
                         style="-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-background-radius: 15; -fx-padding: 15 25; -fx-font-weight: bold; -fx-cursor: hand;">
                     <graphic>
                         <VBox alignment="CENTER" spacing="5">
-                            <Label text="📸" style="-fx-font-size: 24;"/>
-                            <Label text="Synthesize Photos"/>
+                            <Label text="⭐" style="-fx-font-size: 24;"/>
+                            <Label text="Sync Favourites"/>
                         </VBox>
                     </graphic>
                 </Button>
             </HBox>
             
-            <Hyperlink text="or Sync Favourites from Gallery" onAction="#handleSyncFavourites" style="-fx-text-fill: #8892B0; -fx-font-size: 12;"/>
+            <Hyperlink text="or Select Photos Manually" onAction="#handleSelectPhotos" style="-fx-text-fill: #8892B0; -fx-font-size: 12;"/>
         </VBox>
 
         <!-- Preview Player (Initially Hidden) -->
         <VBox fx:id="videoPlayerContainer" visible="false" spacing="15" alignment="CENTER">
             <StackPane fx:id="videoPreviewStack" style="-fx-background-color: black; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 5);">
                 <ImageView fx:id="videoPreviewImage" preserveRatio="true" fitWidth="600" fitHeight="340"/>
+                <javafx.scene.media.MediaView fx:id="videoMediaView" fitWidth="600" fitHeight="340" preserveRatio="true" visible="false" managed="false"/>
                 <Label fx:id="videoOverlayLabel" text="" wrapText="true" alignment="CENTER" textAlignment="CENTER"
                        style="-fx-text-fill: white; -fx-font-size: 20; -fx-padding: 15; -fx-font-family: 'Georgia'; -fx-font-style: italic;"/>
             </StackPane>
@@ -56,11 +57,13 @@
             <!-- Playback Controls -->
             <VBox spacing="8" style="-fx-padding: 0 40;">
                 <Slider fx:id="videoSeekBar" style="-fx-cursor: hand;"/>
-                <HBox spacing="15" alignment="CENTER">
-                    <Button text="⏮" style="-fx-background-color: transparent; -fx-font-size: 18; -fx-text-fill: #1A1D2E; -fx-cursor: hand;"/>
-                    <Button fx:id="btnVideoPlay" onAction="#handleVideoPlayPause"
-                            style="-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-shape: 'M 0 0 L 20 10 L 0 20 Z'; -fx-min-width: 44; -fx-min-height: 44; -fx-cursor: hand;"/>
-                    <Button text="⏭" style="-fx-background-color: transparent; -fx-font-size: 18; -fx-text-fill: #1A1D2E; -fx-cursor: hand;"/>
+                <HBox spacing="25" alignment="CENTER">
+                    <Button fx:id="btnSkipPrev" text="⏮" onAction="#handleSkipPrevious" 
+                            style="-fx-background-color: transparent; -fx-font-size: 20; -fx-text-fill: #1A1D2E; -fx-cursor: hand;"/>
+                    <Button fx:id="btnVideoPlay" text="▶" onAction="#handleVideoPlayPause"
+                            style="-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-font-size: 18; -fx-min-width: 44; -fx-min-height: 44; -fx-background-radius: 22; -fx-cursor: hand;"/>
+                    <Button fx:id="btnSkipNext" text="⏭" onAction="#handleSkipNext" 
+                            style="-fx-background-color: transparent; -fx-font-size: 20; -fx-text-fill: #1A1D2E; -fx-cursor: hand;"/>
                 </HBox>
             </VBox>
         </VBox>
@@ -77,62 +80,67 @@
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent;">
             <VBox spacing="20">
                 <!-- Compilation Section -->
-                <VBox spacing="12" style="-fx-background-color: #F8FAFF; -fx-padding: 15; -fx-background-radius: 15; -fx-border-color: #D9C8FF; -fx-border-radius: 15;">
-                    <Label text="COMPILATION" style="-fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #7A7A7A;"/>
-                    
-                    <VBox spacing="5" fx:id="synthesisControls">
-                        <HBox alignment="CENTER_LEFT" spacing="10">
-                            <Label text="Image Duration (sec)" style="-fx-font-size: 11; -fx-text-fill: #4A4A4A;"/>
-                            <Label fx:id="videoDurationValueLabel" text="3.0s" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #4F5BD5;"/>
-                        </HBox>
-                        <Slider fx:id="videoDurationSlider" min="0.5" max="10" value="3"/>
-                        <Label text="Adjust duration for the current photo." style="-fx-font-size: 10; -fx-text-fill: #8892B0;" wrapText="true"/>
-                    </VBox>
+                    <VBox spacing="12" style="-fx-background-color: #F8FAFF; -fx-padding: 15; -fx-background-radius: 15; -fx-border-color: #D9C8FF; -fx-border-radius: 15;">
+                        <Label text="COMPILATION" style="-fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #7A7A7A;"/>
+                        
+                        <VBox spacing="10" fx:id="synthesisControls" VBox.vgrow="ALWAYS">
+                            <Label text="Individual Photo Durations" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                            <ScrollPane fitToWidth="true" minHeight="100" maxHeight="200" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;">
+                                <VBox fx:id="photoDurationList" spacing="8" style="-fx-padding: 5;"/>
+                            </ScrollPane>
+                            <Label text="Enter duration in seconds for each image." style="-fx-font-size: 10; -fx-text-fill: #8892B0;" wrapText="true"/>
+                        </VBox>
 
-                    <VBox fx:id="trimControls" spacing="12" visible="false" managed="false" style="-fx-background-color: #FFF4E5; -fx-padding: 10; -fx-background-radius: 10;">
-                        <Label text="🎬 Video Trimming" style="-fx-font-weight: bold; -fx-text-fill: #E67E22; -fx-font-size: 10;"/>
-                        <VBox spacing="5">
-                            <Label text="Start Trim" style="-fx-font-size: 10;"/>
-                            <Slider fx:id="trimStartSlider" min="0" max="100" value="0"/>
+                    <VBox fx:id="trimControls" spacing="12" visible="false" managed="false" style="-fx-background-color: #FFF4E5; -fx-padding: 15; -fx-background-radius: 15; -fx-border-color: #FFD29D; -fx-border-radius: 15;">
+                        <Label text="🎬 VIDEO TRIMMING" style="-fx-font-family: 'Poppins SemiBold'; -fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #E67E22;"/>
+                        <VBox spacing="8">
+                            <Label text="Trim Amount (seconds)" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                            <TextField fx:id="videoTrimInput" promptText="e.g. 2.5" style="-fx-background-radius: 8; -fx-border-radius: 8; -fx-padding: 5;"/>
                         </VBox>
-                        <VBox spacing="5">
-                            <Label text="End Trim" style="-fx-font-size: 10;"/>
-                            <Slider fx:id="trimEndSlider" min="0" max="100" value="100"/>
-                        </VBox>
-                         <Label text="Reduce the front or end parts." style="-fx-font-size: 9; -fx-text-fill: #A04000;" wrapText="true"/>
+                        <HBox spacing="10" alignment="CENTER">
+                            <Button fx:id="btnTrimFront" text="Cut Front" onAction="#handleTrimFront" HBox.hgrow="ALWAYS" maxWidth="Infinity"
+                                    style="-fx-background-color: #F39C12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;"/>
+                            <Button fx:id="btnTrimBack" text="Cut Back" onAction="#handleTrimBack" HBox.hgrow="ALWAYS" maxWidth="Infinity"
+                                    style="-fx-background-color: #F39C12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;"/>
+                        </HBox>
+                        <Label text="Enter seconds to remove from start or end." style="-fx-font-size: 9; -fx-text-fill: #A04000;" wrapText="true"/>
                     </VBox>
                 </VBox>
 
                 <!-- Overlay Section -->
                 <VBox spacing="12" style="-fx-background-color: #F8FAFF; -fx-padding: 15; -fx-background-radius: 15; -fx-border-color: #C8E8FF; -fx-border-radius: 15;">
                     <Label text="CONTENT OVERLAY" style="-fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #7A7A7A;"/>
-                    <TextArea fx:id="videoOverlayText" promptText="Enter your poem or text here..." prefHeight="100" wrapText="true"
-                              style="-fx-background-radius: 10; -fx-padding: 5; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif;"/>
                     
-                    <VBox spacing="8">
-                        <HBox spacing="10" alignment="CENTER_LEFT">
-                            <Label text="Font Family" style="-fx-font-size: 11;"/>
-                            <ComboBox fx:id="videoFontCombo" maxWidth="Infinity" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 5;"/>
-                        </HBox>
+                    <VBox spacing="5">
+                        <Label text="Poem / Text Content" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                        <TextArea fx:id="videoOverlayText" promptText="Enter your poem or text here..." prefHeight="80" wrapText="true"
+                                  style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-padding: 5; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif;"/>
+                    </VBox>
+                    
+                    <VBox spacing="10">
+                        <VBox spacing="5">
+                            <Label text="Font Family" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                            <ComboBox fx:id="videoFontCombo" maxWidth="Infinity" style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #E2E8F0; -fx-border-radius: 8;"/>
+                        </VBox>
                         
-                        <HBox spacing="10" alignment="CENTER_LEFT">
-                            <Label text="Color" style="-fx-font-size: 11;"/>
-                            <ColorPicker fx:id="videoTextColorPicker" style="-fx-background-color: transparent;"/>
-                        </HBox>
-
-                        <VBox spacing="2">
-                            <Label text="Transparency" style="-fx-font-size: 11;"/>
-                            <Slider fx:id="videoOpacitySlider" min="0" max="1" value="1" blockIncrement="0.1"/>
+                        <VBox spacing="5">
+                            <Label text="Text Color" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                            <ColorPicker fx:id="videoTextColorPicker" maxWidth="Infinity" style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #E2E8F0; -fx-border-radius: 8;"/>
                         </VBox>
 
-                        <VBox spacing="2">
-                            <Label text="X Position" style="-fx-font-size: 11;"/>
-                            <Slider fx:id="videoTextXSlider" min="-300" max="300" value="0"/>
+                        <VBox spacing="5">
+                            <Label text="Transparency" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                            <Slider fx:id="videoOpacitySlider" min="0" max="1" value="1" blockIncrement="0.1" style="-fx-cursor: hand;"/>
                         </VBox>
 
-                        <VBox spacing="2">
-                            <Label text="Y Position" style="-fx-font-size: 11;"/>
-                            <Slider fx:id="videoTextYSlider" min="-150" max="150" value="0"/>
+                        <VBox spacing="5">
+                            <Label text="X Position" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                            <Slider fx:id="videoTextXSlider" min="-300" max="300" value="0" style="-fx-cursor: hand;"/>
+                        </VBox>
+
+                        <VBox spacing="5">
+                            <Label text="Y Position" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                            <Slider fx:id="videoTextYSlider" min="-150" max="150" value="0" style="-fx-cursor: hand;"/>
                         </VBox>
                     </VBox>
                 </VBox>
@@ -144,16 +152,20 @@
                         <items>
                             <FXCollections fx:factory="observableArrayList">
                                 <String fx:value="None" />
-                                <String fx:value="Floating Hearts" />
-                                <String fx:value="Classic Border" />
-                                <String fx:value="Vignette" />
+                                <String fx:value="Heart Stickers" />
+                                <String fx:value="Star Explosion" />
+                                <String fx:value="Birthday Party" />
+                                <String fx:value="Retro Film" />
+                                <String fx:value="Classic Vignette" />
+                                <String fx:value="Golden Borders" />
+                                <String fx:value="White Borders" />
                             </FXCollections>
                         </items>
                     </ComboBox>
                 </VBox>
 
                 <!-- Export -->
-                <Button text="💾 Render &amp; Save Video" maxWidth="Infinity" minHeight="50"
+                <Button text="💾 Render &amp; Save Video" maxWidth="Infinity" minHeight="50" onAction="#handleRenderSave"
                         style="-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-background-radius: 12; -fx-font-weight: bold; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-cursor: hand;"/>
             </VBox>
         </ScrollPane>

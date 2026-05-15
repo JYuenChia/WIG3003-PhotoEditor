@@ -14,7 +14,7 @@
     <StackPane HBox.hgrow="ALWAYS" style="-fx-padding: 15;">
         <VBox fx:id="videoDropZone" alignment="CENTER" spacing="25" 
               style="-fx-background-color: #FFFFFF; -fx-background-radius: 20; -fx-border-color: #D8DEFF; -fx-border-width: 2; -fx-border-style: dashed; -fx-border-radius: 20;">
-            <Label text="►" style="-fx-font-size: 48; -fx-text-fill: #4F5BD5;"/>
+            <Label text="⏵" style="-fx-font-size: 56; -fx-text-fill: #4F5BD5; -fx-padding: 0 0 0 5;"/>
             <VBox alignment="CENTER" spacing="5">
                 <Label text="Master Your Media" style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
                 <Label text="Choose an entry point to begin creating" style="-fx-font-size: 13; -fx-text-fill: #8892B0;"/>
@@ -32,7 +32,7 @@
                 </Button>
 
                 <Button onAction="#handleSyncFavourites" 
-                        style="-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-background-radius: 15; -fx-padding: 15 25; -fx-font-weight: bold; -fx-cursor: hand;">
+                        style="-fx-background-color: #7E8CFF; -fx-text-fill: white; -fx-background-radius: 15; -fx-padding: 15 25; -fx-font-weight: bold; -fx-cursor: hand;">
                     <graphic>
                         <VBox alignment="CENTER" spacing="5">
                             <Label text="⭐" style="-fx-font-size: 24;"/>

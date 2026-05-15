@@ -11,25 +11,18 @@
             style="-fx-background-color: #F7F8FA; -fx-font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;">
 
     <top>
-        <HBox fx:id="toolbarHBox" spacing="10" alignment="CENTER_LEFT"
+        <HBox fx:id="toolbarHBox" spacing="15" alignment="CENTER_LEFT"
               style="-fx-background-color: #FFFFFF; -fx-padding: 10 20; -fx-border-color: #E8EAF0; -fx-border-width: 0 0 1 0; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 8, 0, 0, 2);">
 
             <HBox alignment="CENTER_LEFT" prefWidth="180" minWidth="180" maxWidth="180">
                 <Label fx:id="brandLabel" text="✦PhotoEditor✦" style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;"/>
             </HBox>
             
-            <Separator orientation="VERTICAL" style="-fx-background-color: #E0E4F0; -fx-pref-height: 22;"/>
-
-            <Button fx:id="btnOpen" text="Open" onAction="#handleOpenImage" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
-            <Button fx:id="btnClear" text="Clear" onAction="#handleDelete" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
-            
-            <Separator orientation="VERTICAL" style="-fx-background-color: #E0E4F0; -fx-pref-height: 22;"/>
+            <Button fx:id="btnBack" text="⬅ Back" onAction="#handleBack" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
 
             <Button fx:id="btnUndo" text="Undo" onAction="#handleUndo" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
             <Button fx:id="btnRedo" text="Redo" onAction="#handleRedo" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
             
-            <Separator orientation="VERTICAL" style="-fx-background-color: #E0E4F0; -fx-pref-height: 22;"/>
-
             <Button fx:id="btnZoomIn" text="In" onAction="#handleZoomIn" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
             <Button fx:id="btnZoomOut" text="Out" onAction="#handleZoomOut" style="-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;"/>
 
@@ -56,21 +49,75 @@
                 <ToggleGroup fx:id="sidebarGroup"/>
             </fx:define>
 
-            <ToggleButton fx:id="tabDashboard"    text="⌂  Dashboard"   toggleGroup="$sidebarGroup" onAction="#showDashboard"        selected="true" maxWidth="Infinity" wrapText="true" textAlignment="LEFT"
-                          style="-fx-background-color: #2E3250; -fx-text-fill: #CDD6F4; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"/>
-            <ToggleButton fx:id="tabGallery"      text="⊞  Gallery"      toggleGroup="$sidebarGroup" onAction="#showGallery"          maxWidth="Infinity" wrapText="true" textAlignment="LEFT"
-                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"/>
-            <ToggleButton fx:id="tabDipEditor"    text="✦  DIP Editor"   toggleGroup="$sidebarGroup" onAction="#showDipEditor"        maxWidth="Infinity" wrapText="true" textAlignment="LEFT"
-                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"/>
+            <ToggleButton fx:id="tabDashboard" toggleGroup="$sidebarGroup" onAction="#showDashboard" selected="true" maxWidth="Infinity" styleClass="sidebar-button"
+                          style="-fx-background-color: #2E3250; -fx-text-fill: #CDD6F4; -fx-background-radius: 12; -fx-padding: 0; -fx-alignment: CENTER_LEFT; -fx-cursor: hand; -fx-min-height: 50;">
+                <graphic>
+                    <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-padding: 10 16;">
+                        <Label text="⌂" style="-fx-font-size: 20; -fx-min-width: 30; -fx-alignment: CENTER;"/>
+                        <Label fx:id="lblDashboard" text="Dashboard" style="-fx-font-size: 15; -fx-font-weight: bold;"/>
+                    </HBox>
+                </graphic>
+            </ToggleButton>
+
+            <ToggleButton fx:id="tabGallery" toggleGroup="$sidebarGroup" onAction="#showGallery" maxWidth="Infinity" styleClass="sidebar-button"
+                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-padding: 0; -fx-alignment: CENTER_LEFT; -fx-cursor: hand; -fx-min-height: 50;">
+                <graphic>
+                    <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-padding: 10 16;">
+                        <Label text="⊞" style="-fx-font-size: 20; -fx-min-width: 30; -fx-alignment: CENTER;"/>
+                        <Label fx:id="lblGallery" text="Gallery" style="-fx-font-size: 15; -fx-font-weight: bold;"/>
+                    </HBox>
+                </graphic>
+            </ToggleButton>
+
+            <ToggleButton fx:id="tabDipEditor" toggleGroup="$sidebarGroup" onAction="#showDipEditor" maxWidth="Infinity" styleClass="sidebar-button"
+                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-padding: 0; -fx-alignment: CENTER_LEFT; -fx-cursor: hand; -fx-min-height: 50;">
+                <graphic>
+                    <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-padding: 10 16;">
+                        <Label text="✦" style="-fx-font-size: 20; -fx-min-width: 30; -fx-alignment: CENTER;"/>
+                        <Label fx:id="lblDip" text="DIP Editor" style="-fx-font-size: 15; -fx-font-weight: bold;"/>
+                    </HBox>
+                </graphic>
+            </ToggleButton>
             
-            <ToggleButton fx:id="tabObjectExtraction" text="◧  Extraction"       toggleGroup="$sidebarGroup" onAction="#showObjectExtraction"  maxWidth="Infinity" wrapText="true" textAlignment="LEFT"
-                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"/>
-            <ToggleButton fx:id="tabMosaic"           text="▦  Mosaic"           toggleGroup="$sidebarGroup" onAction="#showMosaic"           maxWidth="Infinity" wrapText="true" textAlignment="LEFT"
-                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"/>
-            <ToggleButton fx:id="tabVideoCreator"     text="►  Video"            toggleGroup="$sidebarGroup" onAction="#showVideoCreator"     maxWidth="Infinity" wrapText="true" textAlignment="LEFT"
-                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"/>
-            <ToggleButton fx:id="tabShare"            text="↗  Share"            toggleGroup="$sidebarGroup" onAction="#showShare"            maxWidth="Infinity" wrapText="true" textAlignment="LEFT"
-                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"/>
+            <ToggleButton fx:id="tabObjectExtraction" toggleGroup="$sidebarGroup" onAction="#showObjectExtraction" maxWidth="Infinity" styleClass="sidebar-button"
+                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-padding: 0; -fx-alignment: CENTER_LEFT; -fx-cursor: hand; -fx-min-height: 50;">
+                <graphic>
+                    <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-padding: 10 16;">
+                        <Label text="◧" style="-fx-font-size: 20; -fx-min-width: 30; -fx-alignment: CENTER;"/>
+                        <Label fx:id="lblExtraction" text="Extraction" style="-fx-font-size: 15; -fx-font-weight: bold;"/>
+                    </HBox>
+                </graphic>
+            </ToggleButton>
+
+            <ToggleButton fx:id="tabMosaic" toggleGroup="$sidebarGroup" onAction="#showMosaic" maxWidth="Infinity" styleClass="sidebar-button"
+                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-padding: 0; -fx-alignment: CENTER_LEFT; -fx-cursor: hand; -fx-min-height: 50;">
+                <graphic>
+                    <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-padding: 10 16;">
+                        <Label text="▦" style="-fx-font-size: 20; -fx-min-width: 30; -fx-alignment: CENTER;"/>
+                        <Label fx:id="lblMosaic" text="Mosaic" style="-fx-font-size: 15; -fx-font-weight: bold;"/>
+                    </HBox>
+                </graphic>
+            </ToggleButton>
+
+            <ToggleButton fx:id="tabVideoCreator" toggleGroup="$sidebarGroup" onAction="#showVideoCreator" maxWidth="Infinity" styleClass="sidebar-button"
+                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-padding: 0; -fx-alignment: CENTER_LEFT; -fx-cursor: hand; -fx-min-height: 50;">
+                <graphic>
+                    <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-padding: 10 16;">
+                        <Label text="⏵" style="-fx-font-size: 20; -fx-min-width: 30; -fx-alignment: CENTER;"/>
+                        <Label fx:id="lblVideo" text="Video" style="-fx-font-size: 15; -fx-font-weight: bold;"/>
+                    </HBox>
+                </graphic>
+            </ToggleButton>
+
+            <ToggleButton fx:id="tabShare" toggleGroup="$sidebarGroup" onAction="#showShare" maxWidth="Infinity" styleClass="sidebar-button"
+                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-padding: 0; -fx-alignment: CENTER_LEFT; -fx-cursor: hand; -fx-min-height: 50;">
+                <graphic>
+                    <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-padding: 10 16;">
+                        <Label text="↗" style="-fx-font-size: 20; -fx-min-width: 30; -fx-alignment: CENTER;"/>
+                        <Label fx:id="lblShare" text="Share" style="-fx-font-size: 15; -fx-font-weight: bold;"/>
+                    </HBox>
+                </graphic>
+            </ToggleButton>
 
             <Region VBox.vgrow="ALWAYS"/>
         </VBox>
@@ -193,7 +240,7 @@
                 </VBox>
                 <VBox alignment="CENTER" spacing="12" maxWidth="320">
                     <Button text="◑  Toggle Dark / Light Mode" onAction="#handleToggleDarkMode" maxWidth="Infinity" prefHeight="50" style="-fx-background-color: #FFFFFF; -fx-text-fill: #1A1D2E; -fx-background-radius: 12; -fx-font-size: 14; -fx-font-weight: bold; -fx-cursor: hand; -fx-border-color: #E0E4F0; -fx-border-width: 1.5; -fx-border-radius: 12;"/>
-                    <Button text="👤  User Profile" prefHeight="50" maxWidth="Infinity" onAction="#handleUserProfile" style="-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-background-radius: 12; -fx-font-size: 14; -fx-font-weight: bold; -fx-cursor: hand;"/>
+                    <Button text="User Profile" prefHeight="50" maxWidth="Infinity" onAction="#handleUserProfile" style="-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-background-radius: 12; -fx-font-size: 14; -fx-font-weight: bold; -fx-cursor: hand;"/>
                 </VBox>
             </VBox>
 

@@ -53,12 +53,15 @@ public class MainController {
     
     @FXML private Label brandLabel, heartIcon, profileInitialsLabel, profileDisplayName, profileSaveStatus;
     @FXML private Label statusFileName, statusResolution, statusZoom;
-    @FXML private Button btnOpen, btnClear, btnUndo, btnRedo, btnZoomIn, btnZoomOut, btnSettings;
+    @FXML private Label lblDashboard, lblGallery, lblDip, lblExtraction, lblMosaic, lblVideo, lblShare;
+    @FXML private Button btnBack, btnUndo, btnRedo, btnZoomIn, btnZoomOut, btnSettings;
     @FXML private TextField searchBar, annotationField, profileNameField, profileEmailField;
     @FXML private TextArea profileBioField;
     @FXML private ToggleButton tabDashboard, tabGallery, tabDipEditor, tabObjectExtraction, tabMosaic, tabVideoCreator, tabShare;
 
     // --- State Fields ---
+    private java.util.Stack<String> navHistory = new java.util.Stack<>();
+    private String currentPane = "dashboard";
     private String currentFileName = "No file open";
     private String currentImagePath;
     private String currentFileHash;
@@ -83,7 +86,40 @@ public class MainController {
     @FXML public void showVideoCreator()     { switchPane("videoCreator"); }
     @FXML public void showShare()            { switchPane("share"); }
 
+    @FXML public void handleBack() {
+        if (!navHistory.isEmpty()) {
+            String lastPane = navHistory.pop();
+            currentPane = lastPane;
+            // Update UI without pushing to history
+            updatePaneVisibility(lastPane);
+            
+            // Sync toggle group selection
+            syncSidebarSelection(lastPane);
+            
+            applyTheme();
+        }
+    }
+
+    private void syncSidebarSelection(String paneName) {
+        if ("dashboard".equals(paneName)) tabDashboard.setSelected(true);
+        else if ("gallery".equals(paneName)) tabGallery.setSelected(true);
+        else if ("dipEditor".equals(paneName)) tabDipEditor.setSelected(true);
+        else if ("objectExtraction".equals(paneName)) tabObjectExtraction.setSelected(true);
+        else if ("mosaic".equals(paneName)) tabMosaic.setSelected(true);
+        else if ("videoCreator".equals(paneName)) tabVideoCreator.setSelected(true);
+        else if ("share".equals(paneName)) tabShare.setSelected(true);
+    }
+
     private void switchPane(String paneName) {
+        if (!currentPane.equals(paneName)) {
+            navHistory.push(currentPane);
+            currentPane = paneName;
+        }
+        updatePaneVisibility(paneName);
+        applyTheme();
+    }
+
+    private void updatePaneVisibility(String paneName) {
         dashboardPane.setVisible("dashboard".equals(paneName));
         dashboardPane.setManaged("dashboard".equals(paneName));
         galleryPane.setVisible("gallery".equals(paneName));
@@ -104,21 +140,22 @@ public class MainController {
         settingsPane.setManaged("settings".equals(paneName));
         userProfilePane.setVisible("userProfile".equals(paneName));
         userProfilePane.setManaged("userProfile".equals(paneName));
-
-        // Update sidebar visual feedback
-        applyTheme();
     }
 
     private String buildActiveStyle() {
-        return darkMode 
-            ? "-fx-background-color: #2E3250; -fx-text-fill: #CDD6F4; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
-            : "-fx-background-color: #2E3250; -fx-text-fill: #CDD6F4; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;";
+        if (darkMode) {
+            return "-fx-background-color: #2E3250; -fx-text-fill: #CDD6F4; -fx-background-radius: 12; -fx-padding: 0; -fx-cursor: hand; -fx-min-height: 50;";
+        } else {
+            return "-fx-background-color: #C7D2FE; -fx-text-fill: #3730A3; -fx-background-radius: 12; -fx-padding: 0; -fx-cursor: hand; -fx-min-height: 50;";
+        }
     }
 
     private String buildInactiveStyle() {
-        return darkMode
-            ? "-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;"
-            : "-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-font-size: 15; -fx-font-weight: bold; -fx-padding: 14 16; -fx-alignment: CENTER_LEFT; -fx-cursor: hand;";
+        if (darkMode) {
+            return "-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-padding: 0; -fx-cursor: hand; -fx-min-height: 50;";
+        } else {
+            return "-fx-background-color: transparent; -fx-text-fill: #6B7280; -fx-background-radius: 12; -fx-padding: 0; -fx-cursor: hand; -fx-min-height: 50;";
+        }
     }
 
     @FXML
@@ -206,8 +243,7 @@ public class MainController {
             if(brandLabel != null) brandLabel.setStyle("-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #E2E8F0;");
             
             String darkBtn = "-fx-background-color: transparent; -fx-text-fill: #E2E8F0; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;";
-            if(btnOpen != null) btnOpen.setStyle(darkBtn);
-            if(btnClear != null) btnClear.setStyle(darkBtn);
+            if(btnBack != null) btnBack.setStyle(darkBtn);
             if(btnUndo != null) btnUndo.setStyle(darkBtn);
             if(btnRedo != null) btnRedo.setStyle(darkBtn);
             if(btnZoomIn != null) btnZoomIn.setStyle(darkBtn);
@@ -217,7 +253,7 @@ public class MainController {
         } else {
             rootPane.setStyle("-fx-background-color: #F7F8FA; -fx-font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;");
             toolbarHBox.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 10 20; -fx-border-color: #E8EAF0; -fx-border-width: 0 0 1 0;");
-            sidebarVBox.setStyle("-fx-background-color: #1A1D2E; -fx-padding: 16 10; -fx-min-width: " + sidebarW + "; -fx-pref-width: " + sidebarW + ";");
+            sidebarVBox.setStyle("-fx-background-color: #E8EAF0; -fx-padding: 16 10; -fx-min-width: " + sidebarW + "; -fx-pref-width: " + sidebarW + "; -fx-border-color: #D1D5DB; -fx-border-width: 0 1 0 0;");
             statusBarHBox.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 6 20; -fx-border-color: #E8EAF0; -fx-border-width: 1 0 0 0;");
             
             if(mainContentStackPane != null) mainContentStackPane.setStyle("-fx-background-color: #F7F8FA;");
@@ -226,20 +262,35 @@ public class MainController {
             if(imageScrollPane != null) imageScrollPane.setStyle("-fx-background: #F0F2F8; -fx-background-color: #F0F2F8; -fx-border-color: transparent;");
             if(annotationBox != null) annotationBox.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 14 20; -fx-border-color: #E8EAF0; -fx-border-width: 1 0 0 0;");
 
-            if(brandLabel != null) brandLabel.setStyle("-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #1A1D2E;");
+            if(brandLabel != null) brandLabel.setStyle("-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #1F2937;");
             
-            String lightBtn = "-fx-background-color: transparent; -fx-text-fill: #3D4155; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;";
-            if(btnOpen != null) btnOpen.setStyle(lightBtn);
-            if(btnClear != null) btnClear.setStyle(lightBtn);
+            String lightBtn = "-fx-background-color: transparent; -fx-text-fill: #374151; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;";
+            if(btnBack != null) btnBack.setStyle(lightBtn);
             if(btnUndo != null) btnUndo.setStyle(lightBtn);
             if(btnRedo != null) btnRedo.setStyle(lightBtn);
             if(btnZoomIn != null) btnZoomIn.setStyle(lightBtn);
             if(btnZoomOut != null) btnZoomOut.setStyle(lightBtn);
-            if(btnSettings != null) btnSettings.setStyle("-fx-background-color: #F0F2F8; -fx-text-fill: #3D4155; -fx-background-radius: 8; -fx-font-size: 13; -fx-font-weight: bold; -fx-padding: 6 14; -fx-cursor: hand;");
+            if(btnSettings != null) btnSettings.setStyle("-fx-background-color: #E0E7FF; -fx-text-fill: #4338CA; -fx-background-radius: 8; -fx-font-size: 13; -fx-font-weight: bold; -fx-padding: 6 14; -fx-cursor: hand;");
         }
         
+        // Update Sidebar Labels
+        if (lblDashboard != null) {
+            lblDashboard.setVisible(sidebarExpanded); lblDashboard.setManaged(sidebarExpanded);
+            lblGallery.setVisible(sidebarExpanded);   lblGallery.setManaged(sidebarExpanded);
+            lblDip.setVisible(sidebarExpanded);       lblDip.setManaged(sidebarExpanded);
+            lblExtraction.setVisible(sidebarExpanded); lblExtraction.setManaged(sidebarExpanded);
+            lblMosaic.setVisible(sidebarExpanded);    lblMosaic.setManaged(sidebarExpanded);
+            lblVideo.setVisible(sidebarExpanded);     lblVideo.setManaged(sidebarExpanded);
+            lblShare.setVisible(sidebarExpanded);     lblShare.setManaged(sidebarExpanded);
+        }
+
         ToggleButton[] allTabs = {tabDashboard, tabGallery, tabDipEditor, tabObjectExtraction, tabMosaic, tabVideoCreator, tabShare};
-        for (ToggleButton t : allTabs) t.setStyle(t.isSelected() ? buildActiveStyle() : buildInactiveStyle());
+        for (ToggleButton t : allTabs) {
+            if (t != null) {
+                t.setStyle(t.isSelected() ? buildActiveStyle() : buildInactiveStyle());
+                t.setAlignment(sidebarExpanded ? javafx.geometry.Pos.CENTER_LEFT : javafx.geometry.Pos.CENTER);
+            }
+        }
     }
 
     @FXML public void handleSaveProfile() {

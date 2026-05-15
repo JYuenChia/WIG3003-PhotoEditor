@@ -290,6 +290,31 @@ public class VideoController {
         }
     }
 
+    @FXML public void handleShareWhatsApp() { 
+        if (isVideoMode || !videoPhotos.isEmpty()) {
+            // In video mode, we trigger the MainController share directly
+            MainController.getInstance().handleShareWhatsApp(); 
+        } else {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Media");
+            alert.setHeaderText(null);
+            alert.setContentText("Please upload a video or photos first.");
+            alert.showAndWait();
+        }
+    }
+    
+    @FXML public void handleShareEmail() { 
+        if (isVideoMode || !videoPhotos.isEmpty()) {
+            MainController.getInstance().handleShareEmail(); 
+        } else {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Media");
+            alert.setHeaderText(null);
+            alert.setContentText("Please upload a video or photos first.");
+            alert.showAndWait();
+        }
+    }
+
     private void updateOverlayStyle() {
         if (videoOverlayLabel == null) return;
         
@@ -782,6 +807,10 @@ public class VideoController {
         File file = fc.showSaveDialog(null);
 
         if (file != null) {
+            // Update MainController state for sharing
+            MainController.getInstance().setCurrentImagePath(file.getAbsolutePath());
+            MainController.getInstance().setCurrentFileName(file.getName());
+
             // Simulate rendering process
             Alert progress = new Alert(Alert.AlertType.INFORMATION);
             progress.setTitle("Rendering Video");

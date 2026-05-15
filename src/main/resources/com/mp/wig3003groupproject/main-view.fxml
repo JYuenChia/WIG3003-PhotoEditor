@@ -109,16 +109,6 @@
                 </graphic>
             </ToggleButton>
 
-            <ToggleButton fx:id="tabShare" toggleGroup="$sidebarGroup" onAction="#showShare" maxWidth="Infinity" styleClass="sidebar-button"
-                          style="-fx-background-color: transparent; -fx-text-fill: #8892B0; -fx-background-radius: 12; -fx-padding: 0; -fx-alignment: CENTER_LEFT; -fx-cursor: hand; -fx-min-height: 50;">
-                <graphic>
-                    <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-padding: 10 16;">
-                        <Label text="↗" style="-fx-font-size: 20; -fx-min-width: 30; -fx-alignment: CENTER;"/>
-                        <Label fx:id="lblShare" text="Share" style="-fx-font-size: 15; -fx-font-weight: bold;"/>
-                    </HBox>
-                </graphic>
-            </ToggleButton>
-
             <Region VBox.vgrow="ALWAYS"/>
         </VBox>
     </left>
@@ -231,8 +221,7 @@
             <VBox fx:id="mosaicPane" alignment="CENTER" spacing="16" visible="false" managed="false" style="-fx-padding: 60;"><Label text="▦" style="-fx-font-size: 64; -fx-text-fill: #4F5BD5;"/><Label text="Mosaic Generator" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #4F5BD5;"/></VBox>
             <!-- Video Creator Content -->
             <fx:include source="video-view.fxml" fx:id="videoCreatorPaneContent" visible="false" managed="false"/>
-            <VBox fx:id="shareContentPane" alignment="CENTER" spacing="16" visible="false" managed="false" style="-fx-padding: 60;"><Label text="↗ Share" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #4F5BD5;"/></VBox>
-
+            
             <VBox fx:id="settingsPane" alignment="CENTER" spacing="24" visible="false" managed="false" style="-fx-padding: 60;">
                 <VBox alignment="CENTER" spacing="6">
                     <Label text="⚙" style="-fx-font-size: 48; -fx-text-fill: #8892B0;"/>

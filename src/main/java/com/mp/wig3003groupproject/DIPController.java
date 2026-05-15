@@ -102,6 +102,9 @@ public class DIPController {
         }
     }
 
+    @FXML public void handleShareWhatsApp() { MainController.getInstance().handleShareWhatsApp(); }
+    @FXML public void handleShareEmail() { MainController.getInstance().handleShareEmail(); }
+
     // Completely resets the UI sliders/buttons back to their defaults
     public void clearUI() {
         brightnessSlider.setValue(0);

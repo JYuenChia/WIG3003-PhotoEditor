@@ -53,11 +53,11 @@ public class MainController {
     
     @FXML private Label brandLabel, heartIcon, profileInitialsLabel, profileDisplayName, profileSaveStatus;
     @FXML private Label statusFileName, statusResolution, statusZoom;
-    @FXML private Label lblDashboard, lblGallery, lblDip, lblExtraction, lblMosaic, lblVideo, lblShare;
+    @FXML private Label lblDashboard, lblGallery, lblDip, lblExtraction, lblMosaic, lblVideo;
     @FXML private Button btnBack, btnUndo, btnRedo, btnZoomIn, btnZoomOut, btnSettings;
     @FXML private TextField searchBar, annotationField, profileNameField, profileEmailField;
     @FXML private TextArea profileBioField;
-    @FXML private ToggleButton tabDashboard, tabGallery, tabDipEditor, tabObjectExtraction, tabMosaic, tabVideoCreator, tabShare;
+    @FXML private ToggleButton tabDashboard, tabGallery, tabDipEditor, tabObjectExtraction, tabMosaic, tabVideoCreator;
 
     // --- State Fields ---
     private java.util.Stack<String> navHistory = new java.util.Stack<>();
@@ -72,6 +72,10 @@ public class MainController {
     private Properties annotationsDB = new Properties();
     private static final String DB_FILE = "photo_editor_db.properties";
 
+    public void setCurrentImagePath(String path) { this.currentImagePath = path; }
+    public void setCurrentFileName(String name) { this.currentFileName = name; }
+    public String getCurrentImagePath() { return this.currentImagePath; }
+
     @FXML
     public void initialize() {
         loadDatabase();
@@ -84,7 +88,6 @@ public class MainController {
     @FXML public void showObjectExtraction() { switchPane("objectExtraction"); }
     @FXML public void showMosaic()           { switchPane("mosaic"); }
     @FXML public void showVideoCreator()     { switchPane("videoCreator"); }
-    @FXML public void showShare()            { switchPane("share"); }
 
     @FXML public void handleBack() {
         if (!navHistory.isEmpty()) {
@@ -107,7 +110,6 @@ public class MainController {
         else if ("objectExtraction".equals(paneName)) tabObjectExtraction.setSelected(true);
         else if ("mosaic".equals(paneName)) tabMosaic.setSelected(true);
         else if ("videoCreator".equals(paneName)) tabVideoCreator.setSelected(true);
-        else if ("share".equals(paneName)) tabShare.setSelected(true);
     }
 
     private void switchPane(String paneName) {
@@ -210,8 +212,76 @@ public class MainController {
         statusZoom.setText(String.format("Zoom: %.0f%%", zoomLevel * 100));
     }
 
-    @FXML public void handleShareEmail()    { switchPane("share"); tabShare.setSelected(true); }
-    @FXML public void handleShareWhatsApp() { switchPane("share"); tabShare.setSelected(true); }
+    private void copyToClipboard(String text) {
+        javafx.scene.input.Clipboard clipboard = javafx.scene.input.Clipboard.getSystemClipboard();
+        javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+        content.putString(text);
+        clipboard.setContent(content);
+    }
+
+    @FXML public void handleShareEmail() { 
+        if (currentImagePath == null && mainImageView.getImage() == null) {
+            showSimpleWarning("No media to share", "Please upload or edit an image/video first.");
+            return;
+        }
+
+        // Only auto-save if we are in the DIP Editor and have unsaved progress
+        if (mainImageView.getImage() != null && (currentImagePath == null || !currentImagePath.contains("Edited_Gallery"))) {
+            handleSaveToGallery(); 
+        }
+        
+        if (currentImagePath == null) {
+             showSimpleWarning("No media to share", "Please save your media to the gallery first.");
+             return;
+        }
+        
+        copyToClipboard(currentImagePath);
+        String subject = "Check out my creation!";
+        String body = "Hey, I just finished editing this in PhotoEditor!\n\nI've saved the file to my gallery at:\n" + currentImagePath + "\n\n(Note: I've also copied this file path to my clipboard. You can press Ctrl+V to attach it in your email client!)";
+        try {
+            String uri = String.format("mailto:?subject=%s&body=%s",
+                java.net.URLEncoder.encode(subject, "UTF-8").replace("+", "%20"),
+                java.net.URLEncoder.encode(body, "UTF-8").replace("+", "%20"));
+            PhotoEditor.getInstance().getHostServices().showDocument(uri);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML public void handleShareWhatsApp() { 
+        if (currentImagePath == null && mainImageView.getImage() == null) {
+            showSimpleWarning("No media to share", "Please upload or edit an image/video first.");
+            return;
+        }
+
+        // Only auto-save if we are in the DIP Editor and have unsaved progress
+        if (mainImageView.getImage() != null && (currentImagePath == null || !currentImagePath.contains("Edited_Gallery"))) {
+            handleSaveToGallery(); 
+        }
+
+        if (currentImagePath == null) {
+             showSimpleWarning("No media to share", "Please save your media to the gallery first.");
+             return;
+        }
+
+        copyToClipboard(currentImagePath);
+        String text = "Hey, I just finished editing this in PhotoEditor! 🎨✨\n\nI've saved it here: " + currentImagePath + "\n\n(Tip: Press Ctrl+V to attach the file!)";
+        try {
+            String uri = "https://wa.me/?text=" + java.net.URLEncoder.encode(text, "UTF-8");
+            PhotoEditor.getInstance().getHostServices().showDocument(uri);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void showSimpleWarning(String title, String message) {
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.WARNING);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
     @FXML public void handleSearch() { refreshGallery(searchBar.getText()); }
     @FXML public void handleUserProfile() { switchPane("userProfile"); }
     @FXML public void handleProfileBack() { switchPane("settings"); }
@@ -281,10 +351,9 @@ public class MainController {
             lblExtraction.setVisible(sidebarExpanded); lblExtraction.setManaged(sidebarExpanded);
             lblMosaic.setVisible(sidebarExpanded);    lblMosaic.setManaged(sidebarExpanded);
             lblVideo.setVisible(sidebarExpanded);     lblVideo.setManaged(sidebarExpanded);
-            lblShare.setVisible(sidebarExpanded);     lblShare.setManaged(sidebarExpanded);
         }
 
-        ToggleButton[] allTabs = {tabDashboard, tabGallery, tabDipEditor, tabObjectExtraction, tabMosaic, tabVideoCreator, tabShare};
+        ToggleButton[] allTabs = {tabDashboard, tabGallery, tabDipEditor, tabObjectExtraction, tabMosaic, tabVideoCreator};
         for (ToggleButton t : allTabs) {
             if (t != null) {
                 t.setStyle(t.isSelected() ? buildActiveStyle() : buildInactiveStyle());
@@ -383,30 +452,41 @@ public class MainController {
     }
 
     @FXML public void handleSaveToGallery() {
-        if (currentImagePath == null || mainImageView.getImage() == null) return;
+        // If image view is empty, check if we're coming from Video Lab
+        if (mainImageView.getImage() == null) {
+            // For now, if we are in Video mode, we assume the video is processed externally or saved via handleRenderSave
+            // We only show warning if BOTH are empty
+            return; 
+        }
         
         try {
             File outFile;
-            if (currentImagePath.contains("Edited_Gallery")) {
+            File galleryDir = new File("Edited_Gallery");
+            if (!galleryDir.exists()) galleryDir.mkdirs();
+
+            if (currentImagePath != null && currentImagePath.contains("Edited_Gallery")) {
                 outFile = new File(currentImagePath);
             } else {
-                File galleryDir = new File("Edited_Gallery");
-                if (!galleryDir.exists()) galleryDir.mkdirs();
                 outFile = new File(galleryDir, "edited_" + System.currentTimeMillis() + ".png");
             }
             
             ImageIO.write(SwingFXUtils.fromFXImage(mainImageView.getImage(), null), "png", outFile);
             
+            // CRITICAL: Update path and name after saving
             currentImagePath = outFile.getAbsolutePath();
+            currentFileName = outFile.getName();
             currentFileHash = getFileHash(outFile);
             
+            System.out.println("Saved successfully to: " + currentImagePath);
+            
         } catch (Exception e) {
-            System.err.println("Error saving edited image: " + e.getMessage());
+            e.printStackTrace();
+            showSimpleWarning("Save Error", "Could not save image to gallery.");
         }
 
         handleSaveAnnotation();
         
-        if (!editedFiles.contains(currentImagePath)) {
+        if (currentImagePath != null && !editedFiles.contains(currentImagePath)) {
             editedFiles.add(0, currentImagePath);
         }
         

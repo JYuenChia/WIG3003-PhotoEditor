@@ -1,21 +1,5 @@
 package com.mp.wig3003groupproject;
 
-import javafx.fxml.FXML;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Node;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.*;
-import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
-import javafx.embed.swing.SwingFXUtils;
-import javax.imageio.ImageIO;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -24,9 +8,30 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+
+import javax.imageio.ImageIO;
+
+import javafx.embed.swing.SwingFXUtils;
+import javafx.fxml.FXML;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 
 public class MainController {
 
@@ -46,7 +51,8 @@ public class MainController {
     @FXML private BorderPane rootPane;
     @FXML private HBox toolbarHBox, statusBarHBox;
     @FXML private VBox sidebarVBox, dashboardPane, galleryPane, dipWorkspaceBg, uploadPlaceholder, annotationBox;
-    @FXML private VBox objectExtractionPane, mosaicPane, settingsPane, userProfilePane;
+    @FXML private HBox objectExtractionPane, mosaicPane;
+    @FXML private VBox settingsPane, userProfilePane;
     @FXML private VBox shareGalleryContainer, selectedFileIndicator;
     @FXML private MainController shareContentPaneController;
     @FXML private Node shareContentPane, videoCreatorPaneContent;
@@ -54,6 +60,9 @@ public class MainController {
     @FXML private StackPane mainContentStackPane;
     @FXML private ScrollPane imageScrollPane;
     @FXML private ImageView mainImageView;
+    @FXML private ScrollPane extractionImageScrollPane, mosaicImageScrollPane;
+    @FXML private ImageView extractionImageView, mosaicImageView;
+    @FXML private VBox extractionUploadPlaceholder, mosaicUploadPlaceholder;
     @FXML private FlowPane galleryGrid;
     
     @FXML private Label brandLabel, heartIcon, profileInitialsLabel, profileDisplayName, profileSaveStatus;
@@ -799,4 +808,6 @@ public class MainController {
     public List<String> getEditedFiles() { return editedFiles; }
     public Properties getAnnotationsDB() { return annotationsDB; }
     public ImageView getImageView() { return mainImageView; }
+    public ImageView getExtractionImageView() { return extractionImageView; }
+    public ImageView getMosaicImageView() { return mosaicImageView; }
 }

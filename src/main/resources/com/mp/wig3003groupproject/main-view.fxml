@@ -229,8 +229,53 @@
                 <fx:include source="dip-view.fxml"/>
             </HBox>
 
-            <VBox fx:id="objectExtractionPane" alignment="CENTER" spacing="16" visible="false" managed="false" style="-fx-padding: 60;"><Label text="◧" style="-fx-font-size: 64; -fx-text-fill: #4F5BD5;"/><Label text="Object Extraction" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #4F5BD5;"/></VBox>
-            <VBox fx:id="mosaicPane" alignment="CENTER" spacing="16" visible="false" managed="false" style="-fx-padding: 60;"><Label text="▦" style="-fx-font-size: 64; -fx-text-fill: #4F5BD5;"/><Label text="Mosaic Generator" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #4F5BD5;"/></VBox>
+            <!-- Object Extraction Pane -->
+            <HBox fx:id="objectExtractionPane" visible="false" managed="false">
+                <VBox HBox.hgrow="ALWAYS" spacing="0" style="-fx-background-color: #F0F2F8;">
+                    <StackPane VBox.vgrow="ALWAYS">
+                        <ScrollPane fx:id="extractionImageScrollPane" visible="true" fitToWidth="true" fitToHeight="true"
+                                    style="-fx-background: #F0F2F8; -fx-background-color: #F0F2F8; -fx-border-color: transparent;">
+                            <StackPane alignment="CENTER" style="-fx-background-color: transparent;">
+                                <ImageView fx:id="extractionImageView" preserveRatio="true"
+                                           style="-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 30, 0, 0, 8);"/>
+                            </StackPane>
+                        </ScrollPane>
+                        <VBox fx:id="extractionUploadPlaceholder" alignment="CENTER" spacing="16"
+                              style="-fx-background-color: #F0F2F8;">
+                            <Button onAction="#handleOpenImage"
+                                    style="-fx-background-color: #FFFFFF; -fx-background-radius: 20; -fx-min-width: 140; -fx-min-height: 140; -fx-font-size: 50; -fx-text-fill: #4F5BD5; -fx-cursor: hand; -fx-border-color: #D8DEFF; -fx-border-width: 2; -fx-border-radius: 20; -fx-effect: dropshadow(gaussian,rgba(79,91,213,0.12),16,0,0,4);"
+                                    text="+"/>
+                            <Label text="Drop an image or click +" style="-fx-font-size: 15; -fx-text-fill: #8892B0; -fx-font-weight: bold;"/>
+                            <Label text="PNG · JPG · BMP · GIF" style="-fx-font-size: 12; -fx-text-fill: #B0BAD4;"/>
+                        </VBox>
+                    </StackPane>
+                </VBox>
+                <fx:include source="object-extraction-view.fxml"/>
+            </HBox>
+
+            <!-- Mosaic Pane -->
+            <HBox fx:id="mosaicPane" visible="false" managed="false">
+                <VBox HBox.hgrow="ALWAYS" spacing="0" style="-fx-background-color: #F0F2F8;">
+                    <StackPane VBox.vgrow="ALWAYS">
+                        <ScrollPane fx:id="mosaicImageScrollPane" visible="true" fitToWidth="true" fitToHeight="true"
+                                    style="-fx-background: #F0F2F8; -fx-background-color: #F0F2F8; -fx-border-color: transparent;">
+                            <StackPane alignment="CENTER" style="-fx-background-color: transparent;">
+                                <ImageView fx:id="mosaicImageView" preserveRatio="true"
+                                           style="-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 30, 0, 0, 8);"/>
+                            </StackPane>
+                        </ScrollPane>
+                        <VBox fx:id="mosaicUploadPlaceholder" alignment="CENTER" spacing="16"
+                              style="-fx-background-color: #F0F2F8;">
+                            <Button onAction="#handleOpenImage"
+                                    style="-fx-background-color: #FFFFFF; -fx-background-radius: 20; -fx-min-width: 140; -fx-min-height: 140; -fx-font-size: 50; -fx-text-fill: #4F5BD5; -fx-cursor: hand; -fx-border-color: #D8DEFF; -fx-border-width: 2; -fx-border-radius: 20; -fx-effect: dropshadow(gaussian,rgba(79,91,213,0.12),16,0,0,4);"
+                                    text="+"/>
+                            <Label text="Drop an image or click +" style="-fx-font-size: 15; -fx-text-fill: #8892B0; -fx-font-weight: bold;"/>
+                            <Label text="PNG · JPG · BMP · GIF" style="-fx-font-size: 12; -fx-text-fill: #B0BAD4;"/>
+                        </VBox>
+                    </StackPane>
+                </VBox>
+                <fx:include source="mosaic-view.fxml"/>
+            </HBox>
             <!-- Video Creator Content -->
             <fx:include source="video-view.fxml" fx:id="videoCreatorPaneContent" visible="false" managed="false"/>
             

@@ -231,7 +231,7 @@
 
             <!-- Object Extraction Pane -->
             <HBox fx:id="objectExtractionPane" visible="false" managed="false">
-                <VBox HBox.hgrow="ALWAYS" spacing="0" style="-fx-background-color: #F0F2F8;">
+                <VBox fx:id="extractionWorkspaceBg" HBox.hgrow="ALWAYS" spacing="0" style="-fx-background-color: #F0F2F8;">
                     <StackPane VBox.vgrow="ALWAYS">
                         <ScrollPane fx:id="extractionImageScrollPane" visible="true" fitToWidth="true" fitToHeight="true"
                                     style="-fx-background: #F0F2F8; -fx-background-color: #F0F2F8; -fx-border-color: transparent;">
@@ -255,7 +255,7 @@
 
             <!-- Mosaic Pane -->
             <HBox fx:id="mosaicPane" visible="false" managed="false">
-                <VBox HBox.hgrow="ALWAYS" spacing="0" style="-fx-background-color: #F0F2F8;">
+                <VBox fx:id="mosaicWorkspaceBg" HBox.hgrow="ALWAYS" spacing="0" style="-fx-background-color: #F0F2F8;">
                     <StackPane VBox.vgrow="ALWAYS">
                         <ScrollPane fx:id="mosaicImageScrollPane" visible="true" fitToWidth="true" fitToHeight="true"
                                     style="-fx-background: #F0F2F8; -fx-background-color: #F0F2F8; -fx-border-color: transparent;">

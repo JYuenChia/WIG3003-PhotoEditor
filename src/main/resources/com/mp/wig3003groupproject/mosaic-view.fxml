@@ -72,15 +72,34 @@
             <!-- GENERATION SECTION -->
             <VBox spacing="10" style="-fx-background-color: #FFFFFF; -fx-padding: 15; -fx-background-radius: 15; -fx-border-color: #FFE8C8; -fx-border-radius: 15;">
                 <Label text="GENERATION" style="-fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #7A7A7A;"/>
+                
+                <VBox spacing="5">
+                    <Label text="Mosaic Mode" style="-fx-text-fill: #4A4A4A; -fx-font-weight: bold;"/>
+                    <ComboBox fx:id="mosaicModeCombo" maxWidth="Infinity">
+                        <items>
+                            <FXCollections fx:factory="observableArrayList">
+                                <String fx:value="Tile Library (Quality)"/>
+                                <String fx:value="Plain Color (Fast)"/>
+                            </FXCollections>
+                        </items>
+                    </ComboBox>
+                </VBox>
+                
                 <Button fx:id="generateBtn" text="✨ Generate Mosaic" onAction="#handleGenerateMosaic" maxWidth="Infinity" 
                         style="-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 10; -fx-font-weight: bold; -fx-cursor: hand;"/>
             </VBox>
 
             <!-- DOWNLOAD SECTION -->
-            <VBox fx:id="downloadContainer" spacing="10" style="-fx-background-color: #FFFFFF; -fx-padding: 15; -fx-background-radius: 15; -fx-border-color: #A6E3A1; -fx-border-radius: 15;">
-                <Label text="SAVE MOSAIC" style="-fx-font-family: 'Poppins SemiBold', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #7A7A7A;"/>
-                <Button fx:id="downloadBtn" text="💾 Save Mosaic" onAction="#handleDownloadMosaic" maxWidth="Infinity" 
-                        style="-fx-background-color: #A6E3A1; -fx-text-fill: #237C3A; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 10; -fx-font-weight: bold; -fx-cursor: hand;"/>
+            <VBox fx:id="downloadContainer" visible="false" spacing="12" style="-fx-padding: 0 0 30 0;">
+                <VBox spacing="10">
+                    <Label text="SAVE &amp; DISTRIBUTION" style="-fx-font-family: 'Poppins SemiBold'; -fx-font-weight: bold; -fx-font-size: 10; -fx-text-fill: #7A7A7A;"/>
+                    
+                    <Button text="📥 Save to Gallery Only" onAction="#handleSaveToGallery" maxWidth="Infinity" minHeight="50"
+                            style="-fx-background-color: #4F5BD5; -fx-text-fill: #FFFFFF; -fx-background-radius: 12; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(79,91,213,0.3), 10, 0, 0, 4);"/>
+
+                    <Button text="💾 Save to Local" onAction="#handleSaveAction" maxWidth="Infinity" minHeight="50"
+                            style="-fx-background-color: #EEF2FF; -fx-text-fill: #4F5BD5; -fx-background-radius: 12; -fx-cursor: hand; -fx-font-family: 'Poppins Medium'; -fx-font-weight: bold; -fx-border-color: #D8DEFF; -fx-border-radius: 12;"/>
+                </VBox>
             </VBox>
 
         </VBox>

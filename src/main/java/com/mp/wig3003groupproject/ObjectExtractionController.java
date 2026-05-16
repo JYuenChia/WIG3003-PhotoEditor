@@ -34,6 +34,7 @@ public class ObjectExtractionController {
     private boolean colorSelected = false;
     private Stack<Image> undoStack = new Stack<>();
     private Stack<Image> redoStack = new Stack<>();
+    private double zoomLevel = 1.0;
     
     private MainController mainController;
 
@@ -109,6 +110,11 @@ public class ObjectExtractionController {
         mainController.getExtractionImageView().setImage(img);
         colorToleranceSlider.setValue(0.1);
         alphaSlider.setValue(1.0);
+        colorSelected = false; // Reset color selection
+        undoStack.clear();
+        redoStack.clear();
+        downloadContainer.setVisible(false); // Hide download button until extraction is done
+        statusLabel.setText("Image loaded. Click on an object to select.");
     }
 
     private void handleImageClick(MouseEvent event) {
@@ -215,16 +221,59 @@ public class ObjectExtractionController {
                     fileName.toLowerCase().endsWith(".jpg") || fileName.toLowerCase().endsWith(".jpeg") ? "jpg" : "png", 
                     new File(fileName));
                 
-                // Save to gallery
-                String outputPath = "Edited_Gallery/" + new File(fileName).getName();
-                ImageIO.write(SwingFXUtils.fromFXImage(currentImage, null), 
-                    fileName.toLowerCase().endsWith(".jpg") || fileName.toLowerCase().endsWith(".jpeg") ? "jpg" : "png", 
-                    new File(outputPath));
-                
-                statusLabel.setText("Extraction saved successfully!");
+                statusLabel.setText("✅ Extraction saved successfully!");
             } catch (Exception e) {
                 statusLabel.setText("Error saving: " + e.getMessage());
             }
+        }
+    }
+
+    @FXML
+    public void handleSaveToGallery() {
+        if (currentImage == null) {
+            statusLabel.setText("No image to save. Please extract first.");
+            return;
+        }
+        mainController.saveImageToGallery(currentImage, "extraction");
+        statusLabel.setText("✅ Saved to gallery successfully!");
+    }
+
+    @FXML
+    public void handleSaveAction() {
+        if (currentImage == null) {
+            statusLabel.setText("No image to save. Please extract first.");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Extraction to Local");
+        fileChooser.getExtensionFilters().addAll(
+            new FileChooser.ExtensionFilter("PNG Image", "*.png"),
+            new FileChooser.ExtensionFilter("JPEG Image", "*.jpg")
+        );
+
+        File file = fileChooser.showSaveDialog(null);
+        if (file != null) {
+            try {
+                String fileName = file.getAbsolutePath();
+                String format = fileName.toLowerCase().endsWith(".jpg") ? "jpg" : "png";
+                ImageIO.write(SwingFXUtils.fromFXImage(currentImage, null), format, new File(fileName));
+                statusLabel.setText("✅ Saved successfully to: " + file.getName());
+            } catch (Exception e) {
+                statusLabel.setText("Error saving: " + e.getMessage());
+            }
+        }
+    }
+
+    public double getZoomLevel() {
+        return zoomLevel;
+    }
+
+    public void setZoomLevel(double level) {
+        this.zoomLevel = level;
+        if (mainController.getExtractionImageView() != null) {
+            mainController.getExtractionImageView().setScaleX(zoomLevel);
+            mainController.getExtractionImageView().setScaleY(zoomLevel);
         }
     }
 
@@ -265,5 +314,20 @@ public class ObjectExtractionController {
             mainController.getExtractionImageView().setImage(next);
             this.currentImage = next;
         }
+    }
+
+    public void clearUI() {
+        originalImage = null;
+        currentImage = null;
+        selectedColor = null;
+        colorSelected = false;
+        undoStack.clear();
+        redoStack.clear();
+        mainController.getExtractionImageView().setImage(null);
+        colorToleranceSlider.setValue(0.1);
+        alphaSlider.setValue(1.0);
+        outputModeCombo.setValue("Extract Only");
+        statusLabel.setText("Load an image to start");
+        downloadContainer.setVisible(false);
     }
 }

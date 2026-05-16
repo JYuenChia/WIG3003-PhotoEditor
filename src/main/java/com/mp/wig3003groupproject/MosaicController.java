@@ -9,6 +9,7 @@ import javax.imageio.ImageIO;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
@@ -24,6 +25,7 @@ public class MosaicController {
     @FXML private Slider tileWidthSlider, tileHeightSlider, blendingSlider;
     @FXML private Label tileWidthLabel, tileHeightLabel, blendingLabel;
     @FXML private Button loadImageBtn, loadTilesBtn, generateBtn, downloadBtn, resetBtn;
+    @FXML private ComboBox<String> mosaicModeCombo;
     @FXML private VBox downloadContainer;
     @FXML private Label statusLabel;
 
@@ -31,6 +33,8 @@ public class MosaicController {
     private Image currentMosaicImage;
     private List<Image> tileImages = new ArrayList<>();
     private boolean tileLibraryLoaded = false;
+    private double zoomLevel = 1.0;
+    private Thread generationThread;
     
     private MainController mainController;
 
@@ -67,11 +71,15 @@ public class MosaicController {
         });
 
         downloadContainer.setVisible(false);
-        statusLabel.setText("Load an image and tiles to start");
+        statusLabel.setText("Load an image and select mosaic mode");
         
         tileWidthSlider.setValue(32);
         tileHeightSlider.setValue(32);
         blendingSlider.setValue(0.5);
+        
+        if (mosaicModeCombo != null) {
+            mosaicModeCombo.setValue("Plain Color (Fast)");
+        }
     }
 
     @FXML
@@ -97,7 +105,12 @@ public class MosaicController {
 
     public void onImageLoaded(Image img) {
         this.originalImage = img;
+        this.currentMosaicImage = img; // Reset to original when new image loads
         mainController.getMosaicImageView().setImage(img);
+        tileLibraryLoaded = false; // Reset tile library flag
+        tileImages.clear(); // Clear previous tiles
+        statusLabel.setText("Image loaded. Load tile images and generate mosaic.");
+        downloadContainer.setVisible(false); // Hide download button until mosaic is generated
     }
 
     @FXML
@@ -139,22 +152,73 @@ public class MosaicController {
             return;
         }
 
-        if (!tileLibraryLoaded || tileImages.isEmpty()) {
-            statusLabel.setText("Please load tile images first.");
+        String mode = mosaicModeCombo != null ? mosaicModeCombo.getValue() : "Tile Library (Quality)";
+        
+        if (mode.contains("Tile Library") && (!tileLibraryLoaded || tileImages.isEmpty())) {
+            statusLabel.setText("Please load tile images first for Tile Library mode.");
             return;
         }
 
-        try {
-            int tileWidth = (int) tileWidthSlider.getValue();
-            int tileHeight = (int) tileHeightSlider.getValue();
-            double blending = blendingSlider.getValue();
+        // Disable generate button while processing
+        generateBtn.setDisable(true);
+        
+        // Create progress dialog
+        javafx.scene.control.Dialog<Boolean> progressDialog = new javafx.scene.control.Dialog<>();
+        progressDialog.setTitle("Processing");
+        progressDialog.setHeaderText("⏳ Generating mosaic, please wait...");
+        javafx.scene.layout.VBox content = new javafx.scene.layout.VBox(10);
+        content.setPadding(new javafx.geometry.Insets(20));
+        javafx.scene.control.ProgressBar progressBar = new javafx.scene.control.ProgressBar();
+        progressBar.setProgress(-1); // Indeterminate
+        javafx.scene.control.Label msgLabel = new javafx.scene.control.Label("Processing in progress...");
+        content.getChildren().addAll(msgLabel, progressBar);
+        progressDialog.getDialogPane().setContent(content);
+        javafx.scene.control.ButtonType cancelBtn = new javafx.scene.control.ButtonType("Cancel", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
+        progressDialog.getDialogPane().getButtonTypes().setAll(cancelBtn);
+        
+        // Run mosaic generation on background thread
+        generationThread = new Thread(() -> {
+            try {
+                int tileWidth = (int) tileWidthSlider.getValue();
+                int tileHeight = (int) tileHeightSlider.getValue();
+                double blending = blendingSlider.getValue();
 
-            currentMosaicImage = createMosaic(originalImage, tileImages, tileWidth, tileHeight, blending);
-            mainController.getMosaicImageView().setImage(currentMosaicImage);
-            statusLabel.setText("Mosaic generated successfully!");
-        } catch (Exception e) {
-            statusLabel.setText("Error generating mosaic: " + e.getMessage());
-        }
+                Image mosaicResult = null;
+                if (mode.contains("Plain Color")) {
+                    mosaicResult = createPlainColorMosaic(originalImage, tileWidth, tileHeight);
+                } else {
+                    mosaicResult = createMosaic(originalImage, tileImages, tileWidth, tileHeight, blending);
+                }
+                
+                currentMosaicImage = mosaicResult;
+                javafx.application.Platform.runLater(() -> {
+                    mainController.getMosaicImageView().setImage(currentMosaicImage);
+                    statusLabel.setText("✅ Mosaic generated successfully!");
+                    downloadContainer.setVisible(true);
+                    progressDialog.close();
+                    generateBtn.setDisable(false);
+                });
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() -> {
+                    statusLabel.setText("Error generating mosaic: " + e.getMessage());
+                    progressDialog.close();
+                    generateBtn.setDisable(false);
+                });
+            }
+        });
+        generationThread.setDaemon(true);
+        
+        // Handle cancel button click
+        progressDialog.setOnCloseRequest(event -> {
+            if (generationThread != null && generationThread.isAlive()) {
+                generationThread.interrupt();
+                statusLabel.setText("Mosaic generation cancelled.");
+                generateBtn.setDisable(false);
+            }
+        });
+        
+        generationThread.start();
+        progressDialog.showAndWait();
     }
 
     private Image createMosaic(Image sourceImage, List<Image> tiles, int tileWidth, int tileHeight, double blending) {
@@ -178,6 +242,33 @@ public class MosaicController {
                 // Scale and blend the tile
                 Image scaledTile = scaleImage(bestTile, tileWidth, tileHeight);
                 blendTileIntoMosaic(mosaicImage, scaledTile, tileX, tileY, blending);
+            }
+        }
+
+        return mosaicImage;
+    }
+
+    private Image createPlainColorMosaic(Image sourceImage, int tileWidth, int tileHeight) {
+        int sourceWidth = (int) sourceImage.getWidth();
+        int sourceHeight = (int) sourceImage.getHeight();
+
+        WritableImage mosaicImage = new WritableImage(sourceWidth, sourceHeight);
+        PixelWriter pw = mosaicImage.getPixelWriter();
+
+        // Create mosaic by filling each tile region with the average color of that region
+        for (int tileY = 0; tileY < sourceHeight; tileY += tileHeight) {
+            for (int tileX = 0; tileX < sourceWidth; tileX += tileWidth) {
+                // Get average color of this region
+                javafx.scene.paint.Color avgColor = getAverageColor(sourceImage, tileX, tileY, tileWidth, tileHeight);
+
+                // Fill the tile region with solid color
+                int endX = Math.min(tileX + tileWidth, sourceWidth);
+                int endY = Math.min(tileY + tileHeight, sourceHeight);
+                for (int y = tileY; y < endY; y++) {
+                    for (int x = tileX; x < endX; x++) {
+                        pw.setColor(x, y, avgColor);
+                    }
+                }
             }
         }
 
@@ -317,16 +408,59 @@ public class MosaicController {
                     fileName.toLowerCase().endsWith(".jpg") || fileName.toLowerCase().endsWith(".jpeg") ? "jpg" : "png", 
                     new File(fileName));
                 
-                // Save to gallery
-                String outputPath = "Edited_Gallery/" + new File(fileName).getName();
-                ImageIO.write(SwingFXUtils.fromFXImage(currentMosaicImage, null), 
-                    fileName.toLowerCase().endsWith(".jpg") || fileName.toLowerCase().endsWith(".jpeg") ? "jpg" : "png", 
-                    new File(outputPath));
-                
                 statusLabel.setText("Mosaic saved successfully!");
             } catch (Exception e) {
                 statusLabel.setText("Error saving: " + e.getMessage());
             }
+        }
+    }
+
+    @FXML
+    public void handleSaveToGallery() {
+        if (currentMosaicImage == null) {
+            statusLabel.setText("No mosaic to save. Please generate first.");
+            return;
+        }
+        mainController.saveImageToGallery(currentMosaicImage, "mosaic");
+        statusLabel.setText("✅ Saved to gallery successfully!");
+    }
+
+    @FXML
+    public void handleSaveAction() {
+        if (currentMosaicImage == null) {
+            statusLabel.setText("No mosaic to save. Please generate first.");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Mosaic to Local");
+        fileChooser.getExtensionFilters().addAll(
+            new FileChooser.ExtensionFilter("PNG Image", "*.png"),
+            new FileChooser.ExtensionFilter("JPEG Image", "*.jpg")
+        );
+
+        File file = fileChooser.showSaveDialog(null);
+        if (file != null) {
+            try {
+                String fileName = file.getAbsolutePath();
+                String format = fileName.toLowerCase().endsWith(".jpg") ? "jpg" : "png";
+                ImageIO.write(SwingFXUtils.fromFXImage(currentMosaicImage, null), format, new File(fileName));
+                statusLabel.setText("✅ Saved successfully to: " + file.getName());
+            } catch (Exception e) {
+                statusLabel.setText("Error saving: " + e.getMessage());
+            }
+        }
+    }
+
+    public double getZoomLevel() {
+        return zoomLevel;
+    }
+
+    public void setZoomLevel(double level) {
+        this.zoomLevel = level;
+        if (mainController.getMosaicImageView() != null) {
+            mainController.getMosaicImageView().setScaleX(zoomLevel);
+            mainController.getMosaicImageView().setScaleY(zoomLevel);
         }
     }
 
@@ -338,6 +472,19 @@ public class MosaicController {
         tileLibraryLoaded = false;
         mainController.getMosaicImageView().setImage(null);
         statusLabel.setText("Reset. Load an image and tiles to start.");
+        downloadContainer.setVisible(false);
+    }
+
+    public void clearUI() {
+        originalImage = null;
+        currentMosaicImage = null;
+        tileImages.clear();
+        tileLibraryLoaded = false;
+        mainController.getMosaicImageView().setImage(null);
+        tileWidthSlider.setValue(32);
+        tileHeightSlider.setValue(32);
+        blendingSlider.setValue(0.5);
+        statusLabel.setText("Load an image and tiles to start");
         downloadContainer.setVisible(false);
     }
 }

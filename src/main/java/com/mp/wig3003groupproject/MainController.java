@@ -50,7 +50,7 @@ public class MainController {
     // --- FXML UI Fields ---
     @FXML private BorderPane rootPane;
     @FXML private HBox toolbarHBox, statusBarHBox;
-    @FXML private VBox sidebarVBox, dashboardPane, galleryPane, dipWorkspaceBg, uploadPlaceholder, annotationBox;
+    @FXML private VBox sidebarVBox, dashboardPane, galleryPane, dipWorkspaceBg, uploadPlaceholder, annotationBox, extractionWorkspaceBg, mosaicWorkspaceBg;
     @FXML private HBox objectExtractionPane, mosaicPane;
     @FXML private VBox settingsPane, userProfilePane;
     @FXML private VBox shareGalleryContainer, selectedFileIndicator;
@@ -196,8 +196,11 @@ public class MainController {
         File file = fc.showOpenDialog(null);
         if (file != null) {
             loadImage(file);
-            switchPane("dipEditor");
-            tabDipEditor.setSelected(true);
+            // If currently in Mosaic or Extraction tab, stay in that tab
+            if (!currentPane.equals("mosaic") && !currentPane.equals("objectExtraction")) {
+                switchPane("dipEditor");
+                tabDipEditor.setSelected(true);
+            }
         }
     }
 
@@ -207,6 +210,11 @@ public class MainController {
         currentDisplayedImage = null;
         uploadPlaceholder.setVisible(true);
         imageScrollPane.setVisible(false);
+        
+        // Show upload placeholders for all tabs
+        if (mosaicUploadPlaceholder != null) mosaicUploadPlaceholder.setVisible(true);
+        if (extractionUploadPlaceholder != null) extractionUploadPlaceholder.setVisible(true);
+        
         currentFileName = "No file open";
         currentImagePath = null;
         currentFileHash = null;
@@ -214,8 +222,10 @@ public class MainController {
         if (annotationBox != null) annotationBox.setVisible(false);
         if (annotationField != null) annotationField.clear();
         
-        // Forces the parameters to reset
+        // Clear all controller states
         if (DIPController.getInstance() != null) DIPController.getInstance().clearUI();
+        if (MosaicController.getInstance() != null) MosaicController.getInstance().clearUI();
+        if (ObjectExtractionController.getInstance() != null) ObjectExtractionController.getInstance().clearUI();
         
         updateStatusBar();
     }
@@ -224,16 +234,36 @@ public class MainController {
     @FXML public void handleRedo() { if (DIPController.getInstance() != null) DIPController.getInstance().redo(); }
 
     @FXML public void handleZoomIn() {
-        zoomLevel = Math.min(zoomLevel + 0.25, 5.0);
-        mainImageView.setScaleX(zoomLevel);
-        mainImageView.setScaleY(zoomLevel);
+        if ("dipEditor".equals(currentPane)) {
+            zoomLevel = Math.min(zoomLevel + 0.25, 5.0);
+            mainImageView.setScaleX(zoomLevel);
+            mainImageView.setScaleY(zoomLevel);
+        } else if ("mosaic".equals(currentPane) && MosaicController.getInstance() != null) {
+            double newZoom = Math.min(MosaicController.getInstance().getZoomLevel() + 0.25, 5.0);
+            MosaicController.getInstance().setZoomLevel(newZoom);
+            zoomLevel = newZoom;
+        } else if ("objectExtraction".equals(currentPane) && ObjectExtractionController.getInstance() != null) {
+            double newZoom = Math.min(ObjectExtractionController.getInstance().getZoomLevel() + 0.25, 5.0);
+            ObjectExtractionController.getInstance().setZoomLevel(newZoom);
+            zoomLevel = newZoom;
+        }
         statusZoom.setText(String.format("Zoom: %.0f%%", zoomLevel * 100));
     }
 
     @FXML public void handleZoomOut() {
-        zoomLevel = Math.max(zoomLevel - 0.25, 0.25);
-        mainImageView.setScaleX(zoomLevel);
-        mainImageView.setScaleY(zoomLevel);
+        if ("dipEditor".equals(currentPane)) {
+            zoomLevel = Math.max(zoomLevel - 0.25, 0.25);
+            mainImageView.setScaleX(zoomLevel);
+            mainImageView.setScaleY(zoomLevel);
+        } else if ("mosaic".equals(currentPane) && MosaicController.getInstance() != null) {
+            double newZoom = Math.max(MosaicController.getInstance().getZoomLevel() - 0.25, 0.25);
+            MosaicController.getInstance().setZoomLevel(newZoom);
+            zoomLevel = newZoom;
+        } else if ("objectExtraction".equals(currentPane) && ObjectExtractionController.getInstance() != null) {
+            double newZoom = Math.max(ObjectExtractionController.getInstance().getZoomLevel() - 0.25, 0.25);
+            ObjectExtractionController.getInstance().setZoomLevel(newZoom);
+            zoomLevel = newZoom;
+        }
         statusZoom.setText(String.format("Zoom: %.0f%%", zoomLevel * 100));
     }
 
@@ -433,8 +463,14 @@ public class MainController {
             // Plunge the central workspaces into darkness
             if(mainContentStackPane != null) mainContentStackPane.setStyle("-fx-background-color: #090A0F;");
             if(dipWorkspaceBg != null) dipWorkspaceBg.setStyle("-fx-background-color: #090A0F;");
+            if(extractionWorkspaceBg != null) extractionWorkspaceBg.setStyle("-fx-background-color: #090A0F;");
+            if(mosaicWorkspaceBg != null) mosaicWorkspaceBg.setStyle("-fx-background-color: #090A0F;");
             if(uploadPlaceholder != null) uploadPlaceholder.setStyle("-fx-background-color: #090A0F;");
+            if(extractionUploadPlaceholder != null) extractionUploadPlaceholder.setStyle("-fx-background-color: #090A0F;");
+            if(mosaicUploadPlaceholder != null) mosaicUploadPlaceholder.setStyle("-fx-background-color: #090A0F;");
             if(imageScrollPane != null) imageScrollPane.setStyle("-fx-background: #090A0F; -fx-background-color: #090A0F; -fx-border-color: transparent;");
+            if(extractionImageScrollPane != null) extractionImageScrollPane.setStyle("-fx-background: #090A0F; -fx-background-color: #090A0F; -fx-border-color: transparent;");
+            if(mosaicImageScrollPane != null) mosaicImageScrollPane.setStyle("-fx-background: #090A0F; -fx-background-color: #090A0F; -fx-border-color: transparent;");
             if(annotationBox != null) annotationBox.setStyle("-fx-background-color: #12141D; -fx-padding: 14 20; -fx-border-color: #1F2332; -fx-border-width: 1 0 0 0;");
 
             // Pop the text color for readability
@@ -456,8 +492,14 @@ public class MainController {
             
             if(mainContentStackPane != null) mainContentStackPane.setStyle("-fx-background-color: #F7F8FA;");
             if(dipWorkspaceBg != null) dipWorkspaceBg.setStyle("-fx-background-color: #F0F2F8;");
+            if(extractionWorkspaceBg != null) extractionWorkspaceBg.setStyle("-fx-background-color: #F0F2F8;");
+            if(mosaicWorkspaceBg != null) mosaicWorkspaceBg.setStyle("-fx-background-color: #F0F2F8;");
             if(uploadPlaceholder != null) uploadPlaceholder.setStyle("-fx-background-color: #F0F2F8;");
+            if(extractionUploadPlaceholder != null) extractionUploadPlaceholder.setStyle("-fx-background-color: #F0F2F8;");
+            if(mosaicUploadPlaceholder != null) mosaicUploadPlaceholder.setStyle("-fx-background-color: #F0F2F8;");
             if(imageScrollPane != null) imageScrollPane.setStyle("-fx-background: #F0F2F8; -fx-background-color: #F0F2F8; -fx-border-color: transparent;");
+            if(extractionImageScrollPane != null) extractionImageScrollPane.setStyle("-fx-background: #F0F2F8; -fx-background-color: #F0F2F8; -fx-border-color: transparent;");
+            if(mosaicImageScrollPane != null) mosaicImageScrollPane.setStyle("-fx-background: #F0F2F8; -fx-background-color: #F0F2F8; -fx-border-color: transparent;");
             if(annotationBox != null) annotationBox.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 14 20; -fx-border-color: #E8EAF0; -fx-border-width: 1 0 0 0;");
 
             if(brandLabel != null) brandLabel.setStyle("-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #1F2937;");
@@ -569,9 +611,17 @@ public class MainController {
 
         uploadPlaceholder.setVisible(false);
         imageScrollPane.setVisible(true);
+        
+        // Hide upload placeholders for all tabs
+        if (mosaicUploadPlaceholder != null) mosaicUploadPlaceholder.setVisible(false);
+        if (extractionUploadPlaceholder != null) extractionUploadPlaceholder.setVisible(false);
+        
         currentFileName = file.getName();
 
+        // Notify all controllers about the loaded image
         if (DIPController.getInstance() != null) DIPController.getInstance().onImageLoaded(image);
+        if (MosaicController.getInstance() != null) MosaicController.getInstance().onImageLoaded(image);
+        if (ObjectExtractionController.getInstance() != null) ObjectExtractionController.getInstance().onImageLoaded(image);
         updateStatusBar();
 
         if (annotationBox != null) { annotationBox.setVisible(true); annotationBox.setManaged(true); }
@@ -740,6 +790,31 @@ public class MainController {
         if (name.toLowerCase().endsWith(extension.toLowerCase())) return file;
         String parent = file.getParent();
         return parent == null ? new File(name + extension) : new File(parent, name + extension);
+    }
+
+    // Helper method for MosaicController and ObjectExtractionController to save images
+    public void saveImageToGallery(Image image, String prefix) {
+        try {
+            ensureGalleryStorage();
+            File galleryDir = getGalleryDirectory();
+            File target = new File(galleryDir, prefix + "_" + System.currentTimeMillis() + ".png");
+            ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", target);
+            
+            // Add to gallery tracking
+            String targetPath = target.getAbsolutePath();
+            if (!editedFiles.contains(targetPath)) {
+                editedFiles.add(0, targetPath);
+            }
+            saveDatabase();
+            refreshGallery(""); // Refresh gallery display
+            syncSharePane(); // Refresh share pane
+            
+            showSimpleInfo("Saved", "✅ Saved to gallery: " + target.getName());
+            System.out.println("Saved successfully to: " + target.getAbsolutePath());
+        } catch (Exception e) {
+            e.printStackTrace();
+            showSimpleWarning("Save Error", "Could not save to gallery: " + e.getMessage());
+        }
     }
 
     // --- Gallery Logic ---

@@ -38,7 +38,6 @@ build/
 .DS_Store
 
 # Database and Locally Edited Images
-annotations_database.properties
 photo_editor_db.properties
 Edited_Gallery/
 gallery_db.properties

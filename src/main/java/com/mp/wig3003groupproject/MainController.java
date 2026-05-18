@@ -25,6 +25,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
@@ -64,7 +65,7 @@ public class MainController {
     @FXML private ImageView extractionImageView, mosaicImageView;
     @FXML private VBox extractionUploadPlaceholder, mosaicUploadPlaceholder;
     @FXML private FlowPane galleryGrid;
-    
+
     @FXML private Label brandLabel, heartIcon, profileInitialsLabel, profileDisplayName, profileSaveStatus;
     @FXML private Label statusFileName, statusResolution, statusZoom;
     @FXML private Label lblDashboard, lblGallery, lblDip, lblExtraction, lblMosaic, lblVideo, lblShare;
@@ -99,8 +100,29 @@ public class MainController {
     public void initialize() {
         ensureGalleryStorage();
         loadDatabase();
+
+        if (imageScrollPane != null) {
+            imageScrollPane.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+                if (DIPController.getInstance() != null && DIPController.getInstance().isSelectionMode()) {
+                    Image currentImg = mainImageView.getImage();
+                    if (currentImg == null) return;
+
+                    double ratioX = currentImg.getWidth() / mainImageView.getBoundsInLocal().getWidth();
+                    double ratioY = currentImg.getHeight() / mainImageView.getBoundsInLocal().getHeight();
+
+                    double imageClickX = event.getX() - mainImageView.getLayoutX();
+                    double imageClickY = event.getY() - mainImageView.getLayoutY();
+
+                    if (imageClickX >= 0 && imageClickX <= mainImageView.getBoundsInLocal().getWidth() &&
+                            imageClickY >= 0 && imageClickY <= mainImageView.getBoundsInLocal().getHeight()) {
+
+                        DIPController.getInstance().selectSimilarColors(imageClickX * ratioX, imageClickY * ratioY);
+                    }
+                }
+            });
+        }
+
         // applyTheme() should be called after FXML injection is guaranteed.
-        // In most cases, it's safer to use Platform.runLater if rootPane logic is sensitive.
         javafx.application.Platform.runLater(this::applyTheme);
     }
 
@@ -118,10 +140,10 @@ public class MainController {
             currentPane = lastPane;
             // Update UI without pushing to history
             updatePaneVisibility(lastPane);
-            
+
             // Sync toggle group selection
             syncSidebarSelection(lastPane);
-            
+
             applyTheme();
         }
     }
@@ -204,29 +226,29 @@ public class MainController {
         }
     }
 
-    // UPDATED: Now forcefully clears the right-side properties panel
+    // clears the right-side properties panel
     @FXML public void handleDelete() {
         mainImageView.setImage(null);
         currentDisplayedImage = null;
         uploadPlaceholder.setVisible(true);
         imageScrollPane.setVisible(false);
-        
+
         // Show upload placeholders for all tabs
         if (mosaicUploadPlaceholder != null) mosaicUploadPlaceholder.setVisible(true);
         if (extractionUploadPlaceholder != null) extractionUploadPlaceholder.setVisible(true);
-        
+
         currentFileName = "No file open";
         currentImagePath = null;
         currentFileHash = null;
         if (heartIcon != null) heartIcon.setVisible(false);
         if (annotationBox != null) annotationBox.setVisible(false);
         if (annotationField != null) annotationField.clear();
-        
+
         // Clear all controller states
         if (DIPController.getInstance() != null) DIPController.getInstance().clearUI();
         if (MosaicController.getInstance() != null) MosaicController.getInstance().clearUI();
         if (ObjectExtractionController.getInstance() != null) ObjectExtractionController.getInstance().clearUI();
-        
+
         updateStatusBar();
     }
 
@@ -449,17 +471,17 @@ public class MainController {
         applyTheme();
     }
 
-    // UPDATED: Extremely Deep Dark Mode for much better visual contrast
+    // Dark Mode for much better visual contrast
     private void applyTheme() {
         if (rootPane == null) return; // Prevent NPE if called prematurely
         String sidebarW = sidebarExpanded ? "220" : "60";
-        
+
         if (darkMode) {
             rootPane.setStyle("-fx-background-color: #090A0F; -fx-font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;");
             if (toolbarHBox != null) toolbarHBox.setStyle("-fx-background-color: #12141D; -fx-padding: 10 20; -fx-border-color: #1F2332; -fx-border-width: 0 0 1 0;");
             if (sidebarVBox != null) sidebarVBox.setStyle("-fx-background-color: #12141D; -fx-padding: 16 10; -fx-min-width: " + sidebarW + "; -fx-pref-width: " + sidebarW + "; -fx-border-color: #1F2332; -fx-border-width: 0 1 0 0;");
             if (statusBarHBox != null) statusBarHBox.setStyle("-fx-background-color: #12141D; -fx-padding: 6 20; -fx-border-color: #1F2332; -fx-border-width: 1 0 0 0;");
-            
+
             // Plunge the central workspaces into darkness
             if(mainContentStackPane != null) mainContentStackPane.setStyle("-fx-background-color: #090A0F;");
             if(dipWorkspaceBg != null) dipWorkspaceBg.setStyle("-fx-background-color: #090A0F;");
@@ -475,7 +497,7 @@ public class MainController {
 
             // Pop the text color for readability
             if(brandLabel != null) brandLabel.setStyle("-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #E2E8F0;");
-            
+
             String darkBtn = "-fx-background-color: transparent; -fx-text-fill: #E2E8F0; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;";
             if(btnBack != null) btnBack.setStyle(darkBtn);
             if(btnUndo != null) btnUndo.setStyle(darkBtn);
@@ -483,13 +505,13 @@ public class MainController {
             if(btnZoomIn != null) btnZoomIn.setStyle(darkBtn);
             if(btnZoomOut != null) btnZoomOut.setStyle(darkBtn);
             if(btnSettings != null) btnSettings.setStyle("-fx-background-color: #1F2332; -fx-text-fill: #E2E8F0; -fx-background-radius: 8; -fx-font-size: 13; -fx-font-weight: bold; -fx-padding: 6 14; -fx-cursor: hand;");
-            
+
         } else {
             rootPane.setStyle("-fx-background-color: #F7F8FA; -fx-font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;");
             if (toolbarHBox != null) toolbarHBox.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 10 20; -fx-border-color: #E8EAF0; -fx-border-width: 0 0 1 0;");
             if (sidebarVBox != null) sidebarVBox.setStyle("-fx-background-color: #E8EAF0; -fx-padding: 16 10; -fx-min-width: " + sidebarW + "; -fx-pref-width: " + sidebarW + "; -fx-border-color: #D1D5DB; -fx-border-width: 0 1 0 0;");
             if (statusBarHBox != null) statusBarHBox.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 6 20; -fx-border-color: #E8EAF0; -fx-border-width: 1 0 0 0;");
-            
+
             if(mainContentStackPane != null) mainContentStackPane.setStyle("-fx-background-color: #F7F8FA;");
             if(dipWorkspaceBg != null) dipWorkspaceBg.setStyle("-fx-background-color: #F0F2F8;");
             if(extractionWorkspaceBg != null) extractionWorkspaceBg.setStyle("-fx-background-color: #F0F2F8;");
@@ -503,7 +525,7 @@ public class MainController {
             if(annotationBox != null) annotationBox.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 14 20; -fx-border-color: #E8EAF0; -fx-border-width: 1 0 0 0;");
 
             if(brandLabel != null) brandLabel.setStyle("-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #1F2937;");
-            
+
             String lightBtn = "-fx-background-color: transparent; -fx-text-fill: #374151; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;";
             if(btnBack != null) btnBack.setStyle(lightBtn);
             if(btnUndo != null) btnUndo.setStyle(lightBtn);
@@ -512,32 +534,32 @@ public class MainController {
             if(btnZoomOut != null) btnZoomOut.setStyle(lightBtn);
             if(btnSettings != null) btnSettings.setStyle("-fx-background-color: #E0E7FF; -fx-text-fill: #4338CA; -fx-background-radius: 8; -fx-font-size: 13; -fx-font-weight: bold; -fx-padding: 6 14; -fx-cursor: hand;");
         }
-        
+
         // Update Sidebar Labels
-            if (lblDashboard != null) { 
-                lblDashboard.setVisible(sidebarExpanded); 
-                lblDashboard.setManaged(sidebarExpanded); 
-            } 
-            if (lblGallery != null) { 
-                lblGallery.setVisible(sidebarExpanded); 
-                lblGallery.setManaged(sidebarExpanded); 
-            } 
-            if (lblDip != null) { 
-                lblDip.setVisible(sidebarExpanded); 
-                lblDip.setManaged(sidebarExpanded); 
-            } 
-            if (lblExtraction != null) { 
-                lblExtraction.setVisible(sidebarExpanded); 
-                lblExtraction.setManaged(sidebarExpanded); 
-            } 
-            if (lblMosaic != null) { 
-                lblMosaic.setVisible(sidebarExpanded); 
-                lblMosaic.setManaged(sidebarExpanded); 
-            } 
-            if (lblShare != null) { 
-                lblShare.setVisible(sidebarExpanded); 
-                lblShare.setManaged(sidebarExpanded); 
-            }
+        if (lblDashboard != null) {
+            lblDashboard.setVisible(sidebarExpanded);
+            lblDashboard.setManaged(sidebarExpanded);
+        }
+        if (lblGallery != null) {
+            lblGallery.setVisible(sidebarExpanded);
+            lblGallery.setManaged(sidebarExpanded);
+        }
+        if (lblDip != null) {
+            lblDip.setVisible(sidebarExpanded);
+            lblDip.setManaged(sidebarExpanded);
+        }
+        if (lblExtraction != null) {
+            lblExtraction.setVisible(sidebarExpanded);
+            lblExtraction.setManaged(sidebarExpanded);
+        }
+        if (lblMosaic != null) {
+            lblMosaic.setVisible(sidebarExpanded);
+            lblMosaic.setManaged(sidebarExpanded);
+        }
+        if (lblShare != null) {
+            lblShare.setVisible(sidebarExpanded);
+            lblShare.setManaged(sidebarExpanded);
+        }
         ToggleButton[] allTabs = {tabDashboard, tabGallery, tabDipEditor, tabObjectExtraction, tabMosaic, tabVideoCreator, tabShare};
         for (ToggleButton t : allTabs) {
             if (t != null) {
@@ -558,7 +580,7 @@ public class MainController {
         pause.setOnFinished(e -> { if (profileSaveStatus != null) profileSaveStatus.setText(""); });
         pause.play();
     }
-    
+
     private String getFileHash(File file) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
@@ -572,14 +594,14 @@ public class MainController {
     @FXML public void handleBrowseFolder() {
         DirectoryChooser dc = new DirectoryChooser();
         dc.setTitle("Select Image Repository");
-        
+
         File localGallery = getGalleryDirectory();
         if (localGallery.exists()) {
             dc.setInitialDirectory(localGallery);
         } else {
             dc.setInitialDirectory(new File(System.getProperty("user.dir")));
         }
-        
+
         File dir = dc.showDialog(rootPane.getScene().getWindow());
         if (dir != null) {
             File[] files = dir.listFiles((d, name) -> name.matches("(?i).*\\.(png|jpg|jpeg|gif|bmp)"));
@@ -604,18 +626,18 @@ public class MainController {
 
         mainImageView.boundsInParentProperty().addListener((obs, oldVal, newVal) -> {
             if (heartIcon != null && mainImageView.getImage() != null) {
-                heartIcon.setTranslateX(newVal.getWidth() / 2 - 25); 
+                heartIcon.setTranslateX(newVal.getWidth() / 2 - 25);
                 heartIcon.setTranslateY(-newVal.getHeight() / 2 + 25);
             }
         });
 
         uploadPlaceholder.setVisible(false);
         imageScrollPane.setVisible(true);
-        
+
         // Hide upload placeholders for all tabs
         if (mosaicUploadPlaceholder != null) mosaicUploadPlaceholder.setVisible(false);
         if (extractionUploadPlaceholder != null) extractionUploadPlaceholder.setVisible(false);
-        
+
         currentFileName = file.getName();
 
         // Notify all controllers about the loaded image
@@ -799,7 +821,7 @@ public class MainController {
             File galleryDir = getGalleryDirectory();
             File target = new File(galleryDir, prefix + "_" + System.currentTimeMillis() + ".png");
             ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", target);
-            
+
             // Add to gallery tracking
             String targetPath = target.getAbsolutePath();
             if (!editedFiles.contains(targetPath)) {
@@ -808,7 +830,7 @@ public class MainController {
             saveDatabase();
             refreshGallery(""); // Refresh gallery display
             syncSharePane(); // Refresh share pane
-            
+
             showSimpleInfo("Saved", "✅ Saved to gallery: " + target.getName());
             System.out.println("Saved successfully to: " + target.getAbsolutePath());
         } catch (Exception e) {
@@ -824,7 +846,7 @@ public class MainController {
             File f = new File(path);
             String hash = getFileHash(f);
             String note = annotationsDB.getProperty(hash, "").toLowerCase();
-            
+
             if (!filter.isEmpty() && !f.getName().toLowerCase().contains(filter.toLowerCase()) && !note.contains(filter.toLowerCase())) continue;
 
             VBox card = new VBox(8);
@@ -843,7 +865,7 @@ public class MainController {
             Label name = new Label(f.getName());
             name.setStyle("-fx-font-size: 11; -fx-text-fill: #1A1D2E; -fx-font-weight: bold;");
             name.setMaxWidth(140);
-            
+
             card.getChildren().addAll(imgStack, name);
             card.setCursor(javafx.scene.Cursor.HAND);
             card.setOnMouseClicked(e -> {

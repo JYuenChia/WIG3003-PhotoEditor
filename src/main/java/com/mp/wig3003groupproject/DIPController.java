@@ -120,6 +120,17 @@ public class DIPController {
         }
     }
 
+    public void reset() {
+        if (originalImage != null) {
+            MainController.getInstance().getImageView().setImage(originalImage);
+            MainController.getInstance().setCurrentDisplayedImage(originalImage);
+            this.currentBaseImage = originalImage;
+            undoStack.clear();
+            redoStack.clear();
+            clearUI();
+        }
+    }
+
     @FXML public void handleShareWhatsApp() { MainController.getInstance().handleShareWhatsApp(); }
     @FXML public void handleShareEmail() { MainController.getInstance().handleShareEmail(); }
 

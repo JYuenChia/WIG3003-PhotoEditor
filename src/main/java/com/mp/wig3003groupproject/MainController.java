@@ -252,8 +252,21 @@ public class MainController {
         updateStatusBar();
     }
 
-    @FXML public void handleUndo() { if (DIPController.getInstance() != null) DIPController.getInstance().undo(); }
-    @FXML public void handleRedo() { if (DIPController.getInstance() != null) DIPController.getInstance().redo(); }
+    @FXML public void handleUndo() {
+        if ("dipEditor".equals(currentPane)) {
+            if (DIPController.getInstance() != null) DIPController.getInstance().undo();
+        } else if ("objectExtraction".equals(currentPane)) {
+            if (ObjectExtractionController.getInstance() != null) ObjectExtractionController.getInstance().undo();
+        }
+    }
+
+    @FXML public void handleRedo() {
+        if ("dipEditor".equals(currentPane)) {
+            if (DIPController.getInstance() != null) DIPController.getInstance().redo();
+        } else if ("objectExtraction".equals(currentPane)) {
+            if (ObjectExtractionController.getInstance() != null) ObjectExtractionController.getInstance().redo();
+        }
+    }
 
     @FXML public void handleZoomIn() {
         if ("dipEditor".equals(currentPane)) {

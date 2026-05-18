@@ -93,12 +93,13 @@ public class MainController {
     private Image currentDisplayedImage;
     private List<String> editedFiles = new ArrayList<>();
     private Properties annotationsDB = new Properties();
-    private static final String DB_FILE = "photo_editor_db.properties";
+    private static final String DB_FILE = "gallery_db.properties";
 
     public void setCurrentImagePath(String path) { this.currentImagePath = path; }
     public void setCurrentFileName(String name) { this.currentFileName = name; }
     public void setCurrentDisplayedImage(Image image) { this.currentDisplayedImage = image; }
     public String getCurrentImagePath() { return this.currentImagePath; }
+    public boolean isSidebarExpanded() { return this.sidebarExpanded; }
 
     @FXML
     public void initialize() {
@@ -209,6 +210,11 @@ public class MainController {
     public void handleSidebarToggle() {
         sidebarExpanded = !sidebarExpanded;
         applyTheme();
+        
+        // Notify VideoController to update scaling if active
+        if (VideoController.getInstance() != null) {
+            VideoController.getInstance().updateScaling();
+        }
     }
 
     @FXML public void handleOpenImage() {
@@ -225,6 +231,11 @@ public class MainController {
     }
 
     @FXML public void handleDelete() {
+        if ("videoCreator".equals(currentPane) && VideoController.getInstance() != null) {
+            VideoController.getInstance().handleDelete();
+            return;
+        }
+
         mainImageView.setImage(null);
         currentDisplayedImage = null;
         uploadPlaceholder.setVisible(true);
@@ -247,8 +258,25 @@ public class MainController {
         updateStatusBar();
     }
 
-    @FXML public void handleUndo() { if (DIPController.getInstance() != null) DIPController.getInstance().undo(); }
-    @FXML public void handleRedo() { if (DIPController.getInstance() != null) DIPController.getInstance().redo(); }
+    @FXML public void handleUndo() {
+        if ("dipEditor".equals(currentPane)) {
+            if (DIPController.getInstance() != null) DIPController.getInstance().undo();
+        } else if ("objectExtraction".equals(currentPane)) {
+            if (ObjectExtractionController.getInstance() != null) ObjectExtractionController.getInstance().undo();
+        } else if ("videoCreator".equals(currentPane)) {
+            if (VideoController.getInstance() != null) VideoController.getInstance().handleUndo();
+        }
+    }
+
+    @FXML public void handleRedo() {
+        if ("dipEditor".equals(currentPane)) {
+            if (DIPController.getInstance() != null) DIPController.getInstance().redo();
+        } else if ("objectExtraction".equals(currentPane)) {
+            if (ObjectExtractionController.getInstance() != null) ObjectExtractionController.getInstance().redo();
+        } else if ("videoCreator".equals(currentPane)) {
+            if (VideoController.getInstance() != null) VideoController.getInstance().handleRedo();
+        }
+    }
 
     @FXML public void handleZoomIn() {
         if ("dipEditor".equals(currentPane)) {
@@ -263,6 +291,8 @@ public class MainController {
             double newZoom = Math.min(ObjectExtractionController.getInstance().getZoomLevel() + 0.25, 5.0);
             ObjectExtractionController.getInstance().setZoomLevel(newZoom);
             zoomLevel = newZoom;
+        } else if ("videoCreator".equals(currentPane) && VideoController.getInstance() != null) {
+            VideoController.getInstance().handleZoomIn();
         }
         statusZoom.setText(String.format("Zoom: %.0f%%", zoomLevel * 100));
     }
@@ -280,6 +310,8 @@ public class MainController {
             double newZoom = Math.max(ObjectExtractionController.getInstance().getZoomLevel() - 0.25, 0.25);
             ObjectExtractionController.getInstance().setZoomLevel(newZoom);
             zoomLevel = newZoom;
+        } else if ("videoCreator".equals(currentPane) && VideoController.getInstance() != null) {
+            VideoController.getInstance().handleZoomOut();
         }
         statusZoom.setText(String.format("Zoom: %.0f%%", zoomLevel * 100));
     }
@@ -379,7 +411,7 @@ public class MainController {
 
         if (btnSendEmail != null) {
             btnSendEmail.setDisable(true);
-            btnSendEmail.setText("⏳ Sending...");
+            btnSendEmail.setText("Sending...");
         }
         emailStatusLabel.setText("");
 
@@ -393,9 +425,9 @@ public class MainController {
                 javafx.application.Platform.runLater(() -> {
                     if (btnSendEmail != null) {
                         btnSendEmail.setDisable(false);
-                        btnSendEmail.setText("🚀 Send with Attachment");
+                        btnSendEmail.setText("Send with Attachment");
                     }
-                    emailStatusLabel.setText("✅ Sent successfully!");
+                    emailStatusLabel.setText("Sent successfully!");
                     emailStatusLabel.setStyle("-fx-text-fill: #10B981;");
                 });
             } catch (Exception e) {
@@ -403,9 +435,9 @@ public class MainController {
                 javafx.application.Platform.runLater(() -> {
                     if (btnSendEmail != null) {
                         btnSendEmail.setDisable(false);
-                        btnSendEmail.setText("🚀 Send again");
+                        btnSendEmail.setText("Send again");
                     }
-                    emailStatusLabel.setText("❌ Failed: " + e.getMessage());
+                    emailStatusLabel.setText("Failed: " + e.getMessage());
                     emailStatusLabel.setStyle("-fx-text-fill: #EF4444;");
                 });
             }
@@ -630,6 +662,22 @@ public class MainController {
         }
     }
 
+    public File saveFileToGallery(File sourceFile) throws IOException {
+        ensureGalleryStorage();
+        File galleryDir = getGalleryDirectory();
+        
+        String ext = "";
+        int i = sourceFile.getName().lastIndexOf('.');
+        if (i > 0) ext = sourceFile.getName().substring(i);
+        
+        File target = new File(galleryDir, "video_" + System.currentTimeMillis() + ext);
+        Files.copy(sourceFile.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        
+        updateSavedMediaState(target, true);
+        syncSharePane();
+        return target;
+    }
+
     public void checkAnnotationAndHeart() {
         if (heartIcon == null) return;
         if (currentFileHash != null && annotationsDB.containsKey(currentFileHash)) {
@@ -754,6 +802,11 @@ public class MainController {
         return target;
     }
 
+    public void updateSavedMediaStateExternal(File savedFile) throws IOException {
+        updateSavedMediaState(savedFile, true);
+        syncSharePane();
+    }
+
     private void updateSavedMediaState(File savedFile, boolean recordInGallery) throws IOException {
         currentImagePath = savedFile.getAbsolutePath();
         currentFileName = savedFile.getName();
@@ -793,7 +846,8 @@ public class MainController {
         }
     }
 
-    private void refreshGallery(String filter) {
+    // --- Gallery Logic ---
+    public void refreshGallery(String filter) {
         galleryGrid.getChildren().clear();
         for (String path : editedFiles) {
             File f = new File(path);

@@ -70,7 +70,7 @@ public class MosaicController {
             }
         });
 
-        downloadContainer.setVisible(false);
+        downloadContainer.setVisible(true);
         statusLabel.setText("Load an image and select mosaic mode");
         
         tileWidthSlider.setValue(32);
@@ -110,7 +110,7 @@ public class MosaicController {
         tileLibraryLoaded = false; // Reset tile library flag
         tileImages.clear(); // Clear previous tiles
         statusLabel.setText("Image loaded. Load tile images and generate mosaic.");
-        downloadContainer.setVisible(false); // Hide download button until mosaic is generated
+        downloadContainer.setVisible(true);
     }
 
     @FXML
@@ -485,6 +485,6 @@ public class MosaicController {
         tileHeightSlider.setValue(32);
         blendingSlider.setValue(0.5);
         statusLabel.setText("Load an image and tiles to start");
-        downloadContainer.setVisible(false);
+        downloadContainer.setVisible(true);
     }
 }

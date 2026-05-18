@@ -70,7 +70,7 @@ public class ObjectExtractionController {
         outputModeCombo.getItems().addAll("Extract Only", "Extract with Background", "Color Mask");
         outputModeCombo.setValue("Extract Only");
 
-        downloadContainer.setVisible(false);
+        downloadContainer.setVisible(true);
         statusLabel.setText("Load an image to start");
         
         // Add mouse click handler to extraction image view
@@ -113,7 +113,7 @@ public class ObjectExtractionController {
         colorSelected = false; // Reset color selection
         undoStack.clear();
         redoStack.clear();
-        downloadContainer.setVisible(false); // Hide download button until extraction is done
+        downloadContainer.setVisible(true);
         statusLabel.setText("Image loaded. Click on an object to select.");
     }
 
@@ -328,6 +328,6 @@ public class ObjectExtractionController {
         alphaSlider.setValue(1.0);
         outputModeCombo.setValue("Extract Only");
         statusLabel.setText("Load an image to start");
-        downloadContainer.setVisible(false);
+        downloadContainer.setVisible(true);
     }
 }

@@ -31,21 +31,40 @@ import java.util.Properties;
 
 public class VideoController {
 
-    @FXML private VBox videoDropZone, videoPlayerContainer;
-    @FXML private VBox synthesisControls, trimControls, photoDurationList;
-    @FXML private ImageView videoPreviewImage;
-    @FXML private Label videoOverlayLabel;
-    @FXML private TextArea videoOverlayText;
-    @FXML private Slider videoSeekBar;
-    @FXML private TextField videoTrimInput;
-    @FXML private Button btnTrimFront, btnTrimBack;
-    @FXML private ComboBox<String> videoFontCombo;
-    @FXML private Slider videoOpacitySlider, videoTextXSlider, videoTextYSlider;
-    @FXML private ColorPicker videoTextColorPicker;
-    @FXML private ComboBox<String> videoGraphicsCombo;
-    @FXML private StackPane videoPreviewStack;
-    @FXML private Button btnVideoPlay;
-    @FXML private MediaView videoMediaView;
+    @FXML
+    private VBox videoDropZone, videoPlayerContainer;
+    @FXML
+    private VBox synthesisControls, trimControls, photoDurationList;
+    @FXML
+    private ImageView videoPreviewImage;
+    @FXML
+    private Label videoOverlayLabel;
+    @FXML
+    private TextArea videoOverlayText;
+    @FXML
+    private Slider videoSeekBar;
+    @FXML
+    private TextField videoTrimInput;
+    @FXML
+    private Button btnTrimFront, btnTrimBack;
+    @FXML
+    private ComboBox<String> videoFontCombo;
+    @FXML
+    private Slider videoOpacitySlider, videoTextXSlider, videoTextYSlider, videoFontSizeSlider;
+    @FXML
+    private ColorPicker videoTextColorPicker;
+    @FXML
+    private ComboBox<String> videoGraphicsCombo;
+    @FXML
+    private StackPane videoPreviewStack;
+    @FXML
+    private StackPane videoCenterPane;
+    @FXML
+    private Button btnVideoPlay;
+    @FXML
+    private Button btnBackToUpload;
+    @FXML
+    private MediaView videoMediaView;
 
     private List<String> videoPhotos = new ArrayList<>();
     private List<Double> photoDurations = new ArrayList<>();
@@ -57,18 +76,43 @@ public class VideoController {
     private double trimBackSec = 0;
     private double lastKnownMediaWidth = 600;
     private double lastKnownMediaHeight = 340;
-    
+    /** Fixed display size set once when a photo set is loaded; reused every frame to keep size stable. */
+    private double storedFitWidth = 0;
+    private double storedFitHeight = 0;
+    /** Animation timeline for preview graphic overlay effects. */
+    private javafx.animation.Timeline graphicsTimeline;
+    /** Tracks all active overlay animations to play/pause with the video */
+    private java.util.List<javafx.animation.Animation> activeGraphicAnimations = new java.util.ArrayList<>();
+
+    private void setGraphicAnimationsPlaying(boolean play) {
+        if (activeGraphicAnimations == null) return;
+        for (javafx.animation.Animation a : activeGraphicAnimations) {
+            if (play) a.play();
+            else a.pause();
+        }
+    }
+
     // Singleton for MainController to access
     private static VideoController instance;
-    public VideoController() { instance = this; }
-    public static VideoController getInstance() { return instance; }
+
+    public VideoController() {
+        instance = this;
+    }
+
+    public static VideoController getInstance() {
+        return instance;
+    }
 
     @FXML
     public void initialize() {
         if (videoFontCombo != null) {
-            videoFontCombo.setItems(javafx.collections.FXCollections.observableArrayList(javafx.scene.text.Font.getFamilies()));
+            videoFontCombo.setItems(
+                    javafx.collections.FXCollections.observableArrayList(javafx.scene.text.Font.getFamilies()));
             videoFontCombo.setValue("System");
             videoFontCombo.setOnAction(e -> updateOverlayStyle());
+        }
+        if (videoFontSizeSlider != null) {
+            videoFontSizeSlider.valueProperty().addListener((obs, oldV, newV) -> updateOverlayStyle());
         }
 
         if (videoOpacitySlider != null) {
@@ -77,19 +121,22 @@ public class VideoController {
 
         if (videoTextXSlider != null) {
             videoTextXSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-                if (videoOverlayLabel != null) videoOverlayLabel.setTranslateX(newVal.doubleValue());
+                if (videoOverlayLabel != null)
+                    videoOverlayLabel.setTranslateX(newVal.doubleValue());
             });
         }
 
         if (videoTextYSlider != null) {
             videoTextYSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-                if (videoOverlayLabel != null) videoOverlayLabel.setTranslateY(newVal.doubleValue());
+                if (videoOverlayLabel != null)
+                    videoOverlayLabel.setTranslateY(newVal.doubleValue());
             });
         }
 
         if (videoOverlayText != null) {
             videoOverlayText.textProperty().addListener((obs, oldVal, newVal) -> {
-                if (videoOverlayLabel != null) videoOverlayLabel.setText(newVal);
+                if (videoOverlayLabel != null)
+                    videoOverlayLabel.setText(newVal);
             });
         }
 
@@ -116,23 +163,32 @@ public class VideoController {
                 seekByPercentage(percentage);
             });
         }
+
+        // Clip the centre workspace so zoom never overflows the panel boundary
+        if (videoCenterPane != null) {
+            javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle();
+            clip.widthProperty().bind(videoCenterPane.widthProperty());
+            clip.heightProperty().bind(videoCenterPane.heightProperty());
+            videoCenterPane.setClip(clip);
+        }
     }
 
     private void seekByPercentage(double percentage) {
         if (isVideoMode && mediaPlayer != null) {
             double total = mediaPlayer.getTotalDuration().toSeconds();
             double playableDuration = total - trimFrontSec - trimBackSec;
-            
+
             // Map 0-100% to the range [trimFrontSec, total - trimBackSec]
             double targetSec = trimFrontSec + (percentage / 100.0) * playableDuration;
             mediaPlayer.seek(Duration.seconds(targetSec));
             return;
         }
 
-        if (videoPhotos.isEmpty()) return;
+        if (videoPhotos.isEmpty())
+            return;
         double total = getTotalDuration();
         double targetTime = (percentage / 100.0) * total;
-        
+
         double cumulative = 0;
         int targetIndex = 0;
         for (int i = 0; i < videoPhotos.size(); i++) {
@@ -141,15 +197,16 @@ public class VideoController {
                 targetIndex = i;
                 break;
             }
-            if (i == videoPhotos.size() - 1) targetIndex = i;
+            if (i == videoPhotos.size() - 1)
+                targetIndex = i;
         }
-        
+
         if (targetIndex != currentVideoIndex) {
             currentVideoIndex = targetIndex;
             File f = new File(videoPhotos.get(currentVideoIndex));
             videoPreviewImage.setImage(new Image(f.toURI().toString()));
         }
-        
+
         if (videoTimeline != null && videoTimeline.getStatus() == javafx.animation.Animation.Status.RUNNING) {
             videoTimeline.jumpTo(Duration.seconds(targetTime));
         }
@@ -157,155 +214,204 @@ public class VideoController {
 
     private void applyGraphicsOverlay() {
         if (videoPreviewStack == null || videoGraphicsCombo == null) return;
-        
-        // Remove existing graphical overlays (keep only target view and overlay label)
-        videoPreviewStack.getChildren().removeIf(node -> 
-            node != videoPreviewImage && node != videoOverlayLabel && node != videoMediaView);
-        
-        String selection = videoGraphicsCombo.getValue();
-        if ("None".equals(selection)) return;
 
-        double currentWidth = videoMediaView.getFitWidth() > 0 ? videoMediaView.getFitWidth() : videoPreviewStack.getWidth();
-        double currentHeight = videoMediaView.getFitHeight() > 0 ? videoMediaView.getFitHeight() : videoPreviewStack.getHeight();
-        
-        // Fallback to media/image dimensions if width/height not laid out yet
-        if (currentWidth <= 0) {
-            if (isVideoMode && mediaPlayer != null) {
-                currentWidth = lastKnownMediaWidth;
-                currentHeight = lastKnownMediaHeight;
-            } else if (videoPreviewImage.getImage() != null) {
-                currentWidth = videoPreviewImage.getImage().getWidth();
-                currentHeight = videoPreviewImage.getImage().getHeight();
+        // Stop any running overlay animation
+        if (graphicsTimeline != null) { graphicsTimeline.stop(); graphicsTimeline = null; }
+        for (javafx.animation.Animation a : activeGraphicAnimations) { a.stop(); }
+        activeGraphicAnimations.clear();
+
+        // Remove previous overlay nodes (keep image, media, text label)
+        videoPreviewStack.getChildren().removeIf(
+                node -> node != videoPreviewImage && node != videoOverlayLabel && node != videoMediaView);
+
+        String sel = videoGraphicsCombo.getValue();
+        if ("None".equals(sel) || sel == null) return;
+
+        double cw = storedFitWidth  > 0 ? storedFitWidth  : (videoPreviewStack.getWidth()  > 0 ? videoPreviewStack.getWidth()  : 800);
+        double ch = storedFitHeight > 0 ? storedFitHeight : (videoPreviewStack.getHeight() > 0 ? videoPreviewStack.getHeight() : 500);
+
+        switch (sel) {
+            case "Classic Vignette": {
+                javafx.scene.layout.Region v = new javafx.scene.layout.Region();
+                v.setMouseTransparent(true);
+                v.setPrefSize(cw, ch);
+                v.setStyle("-fx-background-color: radial-gradient(center 50% 50%, radius 75%, transparent, rgba(0,0,0,0.75));");
+                videoPreviewStack.getChildren().add(v);
+                break;
+            }
+            case "Golden Borders": {
+                javafx.scene.layout.Region border = new javafx.scene.layout.Region();
+                border.setMouseTransparent(true);
+                border.setPrefSize(cw, ch);
+                border.setMaxSize(cw, ch);
+                // Static border, matching size exactly
+                border.setStyle("-fx-border-color: linear-gradient(to bottom right, #FFD700, #FFA500, #FFD700); -fx-border-width: 12; -fx-border-radius: 4;");
+                videoPreviewStack.getChildren().add(border);
+                break;
+            }
+            case "White Borders": {
+                javafx.scene.layout.Region border = new javafx.scene.layout.Region();
+                border.setMouseTransparent(true);
+                border.setPrefSize(cw, ch);
+                border.setMaxSize(cw, ch);
+                border.setStyle("-fx-border-color: white; -fx-border-width: 12; -fx-border-radius: 4;");
+                videoPreviewStack.getChildren().add(border);
+                break;
+            }
+            case "Retro Film": {
+                javafx.scene.layout.Region tint = new javafx.scene.layout.Region();
+                tint.setMouseTransparent(true);
+                tint.setPrefSize(cw, ch);
+                tint.setStyle("-fx-background-color: rgba(160,100,20,0.15);");
+                // Animated scanline, clipped to container
+                javafx.scene.layout.Pane pane = new javafx.scene.layout.Pane();
+                pane.setMouseTransparent(true);
+                pane.setPrefSize(cw, ch);
+                pane.setMaxSize(cw, ch);
+                pane.setClip(new javafx.scene.shape.Rectangle(cw, ch));
+                javafx.scene.shape.Line scanline = new javafx.scene.shape.Line(0, 0, cw, 0);
+                scanline.setStroke(javafx.scene.paint.Color.rgb(255, 255, 255, 0.35));
+                scanline.setStrokeWidth(2);
+                pane.getChildren().add(scanline);
+                videoPreviewStack.getChildren().addAll(tint, pane);
+                javafx.animation.Timeline tl = new javafx.animation.Timeline(
+                    new javafx.animation.KeyFrame(javafx.util.Duration.ZERO,
+                        new javafx.animation.KeyValue(scanline.translateYProperty(), 0)),
+                    new javafx.animation.KeyFrame(javafx.util.Duration.seconds(1.5),
+                        new javafx.animation.KeyValue(scanline.translateYProperty(), ch)));
+                tl.setCycleCount(javafx.animation.Animation.INDEFINITE);
+                activeGraphicAnimations.add(tl);
+                break;
+            }
+            case "Floating Hearts": {
+                javafx.scene.layout.Pane pane = new javafx.scene.layout.Pane();
+                pane.setMouseTransparent(true);
+                pane.setPrefSize(cw, ch);
+                pane.setMaxSize(cw, ch);
+                pane.setClip(new javafx.scene.shape.Rectangle(cw, ch));
+                videoPreviewStack.getChildren().add(pane);
+                java.util.Random rnd = new java.util.Random(7);
+                for (int i = 0; i < 10; i++) {
+                    javafx.scene.text.Text heart = new javafx.scene.text.Text("♥");
+                    double sz = 16 + rnd.nextDouble() * 18;
+                    heart.setStyle("-fx-font-size: " + sz + ";");
+                    heart.setFill(javafx.scene.paint.Color.rgb(255, 60 + (int)(rnd.nextDouble()*80), 120, 0.85));
+                    heart.setEffect(new javafx.scene.effect.DropShadow(6, javafx.scene.paint.Color.rgb(255,0,80,0.4)));
+                    double startX = 15 + rnd.nextDouble() * (cw - 30);
+                    heart.setLayoutX(startX);
+                    heart.setLayoutY(ch + 30);
+                    pane.getChildren().add(heart);
+                    double dur = 2.5 + rnd.nextDouble() * 2.0;
+                    double delay = rnd.nextDouble() * dur;
+                    javafx.animation.TranslateTransition tt = new javafx.animation.TranslateTransition(
+                            javafx.util.Duration.seconds(dur), heart);
+                    tt.setFromY(0); tt.setToY(-(ch + 60));
+                    tt.setDelay(javafx.util.Duration.seconds(delay));
+                    tt.setCycleCount(javafx.animation.Animation.INDEFINITE);
+                    javafx.animation.FadeTransition ft = new javafx.animation.FadeTransition(
+                            javafx.util.Duration.seconds(dur), heart);
+                    ft.setFromValue(0); ft.setToValue(1);
+                    ft.setAutoReverse(true);
+                    ft.setDelay(javafx.util.Duration.seconds(delay));
+                    ft.setCycleCount(javafx.animation.Animation.INDEFINITE);
+                    activeGraphicAnimations.add(tt);
+                    activeGraphicAnimations.add(ft);
+                }
+                break;
+            }
+            case "Starfield": {
+                javafx.scene.layout.Pane pane = new javafx.scene.layout.Pane();
+                pane.setMouseTransparent(true);
+                pane.setPrefSize(cw, ch);
+                pane.setMaxSize(cw, ch);
+                pane.setClip(new javafx.scene.shape.Rectangle(cw, ch));
+                videoPreviewStack.getChildren().add(pane);
+                java.util.Random rnd = new java.util.Random(42);
+                for (int i = 0; i < 22; i++) {
+                    double r = 3 + rnd.nextDouble() * 5;
+                    javafx.scene.shape.Circle star = new javafx.scene.shape.Circle(r);
+                    star.setFill(javafx.scene.paint.Color.rgb(255, 240, 100, 0.9));
+                    star.setEffect(new javafx.scene.effect.Glow(0.9));
+                    star.setCenterX(rnd.nextDouble() * cw);
+                    star.setCenterY(rnd.nextDouble() * ch);
+                    pane.getChildren().add(star);
+                    double dur = 0.4 + rnd.nextDouble() * 0.8;
+                    javafx.animation.ScaleTransition st = new javafx.animation.ScaleTransition(
+                            javafx.util.Duration.seconds(dur), star);
+                    st.setFromX(0.3); st.setToX(1.4); st.setAutoReverse(true);
+                    st.setCycleCount(javafx.animation.Animation.INDEFINITE);
+                    st.setDelay(javafx.util.Duration.seconds(rnd.nextDouble() * dur));
+                    javafx.animation.FadeTransition ft = new javafx.animation.FadeTransition(
+                            javafx.util.Duration.seconds(dur), star);
+                    ft.setFromValue(0.2); ft.setToValue(1.0); ft.setAutoReverse(true);
+                    ft.setCycleCount(javafx.animation.Animation.INDEFINITE);
+                    ft.setDelay(javafx.util.Duration.seconds(rnd.nextDouble() * dur));
+                    activeGraphicAnimations.add(st);
+                    activeGraphicAnimations.add(ft);
+                }
+                break;
+            }
+            case "Confetti Rain": {
+                javafx.scene.layout.Pane pane = new javafx.scene.layout.Pane();
+                pane.setMouseTransparent(true);
+                pane.setPrefSize(cw, ch);
+                pane.setMaxSize(cw, ch);
+                pane.setClip(new javafx.scene.shape.Rectangle(cw, ch));
+                javafx.scene.paint.Color[] colors = {
+                    javafx.scene.paint.Color.rgb(255,80,80), javafx.scene.paint.Color.rgb(80,200,120),
+                    javafx.scene.paint.Color.rgb(80,140,255), javafx.scene.paint.Color.rgb(255,200,0),
+                    javafx.scene.paint.Color.rgb(200,80,255)
+                };
+                java.util.Random rnd = new java.util.Random(123);
+                videoPreviewStack.getChildren().add(pane);
+                for (int i = 0; i < 20; i++) {
+                    double w2 = 8 + rnd.nextDouble() * 8, h2 = 5 + rnd.nextDouble() * 5;
+                    javafx.scene.shape.Rectangle piece = new javafx.scene.shape.Rectangle(w2, h2);
+                    piece.setFill(colors[i % colors.length]);
+                    piece.setOpacity(0.85);
+                    piece.setLayoutX(rnd.nextDouble() * cw);
+                    piece.setLayoutY(-20);
+                    pane.getChildren().add(piece);
+                    double dur = 1.8 + rnd.nextDouble() * 1.5;
+                    double delay = rnd.nextDouble() * dur;
+                    javafx.animation.TranslateTransition tt = new javafx.animation.TranslateTransition(
+                            javafx.util.Duration.seconds(dur), piece);
+                    tt.setFromY(0); tt.setToY(ch + 40);
+                    tt.setDelay(javafx.util.Duration.seconds(delay));
+                    tt.setCycleCount(javafx.animation.Animation.INDEFINITE);
+                    javafx.animation.RotateTransition rt = new javafx.animation.RotateTransition(
+                            javafx.util.Duration.seconds(dur / 2), piece);
+                    rt.setFromAngle(0); rt.setToAngle(360); rt.setCycleCount(javafx.animation.Animation.INDEFINITE);
+                    rt.setDelay(javafx.util.Duration.seconds(delay));
+                    activeGraphicAnimations.add(tt);
+                    activeGraphicAnimations.add(rt);
+                }
+                break;
             }
         }
-        
-        if (currentWidth <= 0) currentWidth = 800; // Final safe fallback
-        if (currentHeight <= 0) currentHeight = 500;
-        
-        if ("Golden Borders".equals(selection)) {
-            Region border = new Region();
-            border.setStyle("-fx-border-color: radial-gradient(center 50% 50%, radius 100%, #FFD700, #B8860B); " +
-                          "-fx-border-width: 12; -fx-border-style: solid; -fx-mouse-transparent: true;");
-            border.setPrefSize(currentWidth, currentHeight);
-            videoPreviewStack.getChildren().add(border);
-        } else if ("White Borders".equals(selection)) {
-            Region border = new Region();
-            border.setStyle("-fx-border-color: white; -fx-border-width: 12; -fx-border-style: solid; -fx-mouse-transparent: true;");
-            border.setPrefSize(currentWidth, currentHeight);
-            videoPreviewStack.getChildren().add(border);
-        } else if ("Classic Vignette".equals(selection)) {
-            Region vignette = new Region();
-            vignette.setStyle("-fx-background-color: radial-gradient(center 50% 50%, radius 80%, transparent, rgba(0,0,0,0.8)); -fx-mouse-transparent: true;");
-            vignette.setPrefSize(currentWidth, currentHeight);
-            videoPreviewStack.getChildren().add(vignette);
-        } else if ("Retro Film".equals(selection)) {
-            Region film = new Region();
-            film.setPrefSize(currentWidth, currentHeight);
-            film.setStyle("-fx-background-color: rgba(60, 40, 0, 0.15); -fx-mouse-transparent: true;");
-            
-            VBox grain = new VBox();
-            grain.setPrefSize(currentWidth, currentHeight);
-            grain.setStyle("-fx-background-color: repeating-linear-gradient(from 0px 0px to 2px 2px, rgba(255,255,255,0.05), transparent 1px); " +
-                          "-fx-opacity: 0.3; -fx-mouse-transparent: true;");
-            
-            Region line = new Region();
-            line.setPrefWidth(1);
-            line.setPrefHeight(currentHeight);
-            line.setStyle("-fx-background-color: rgba(255,255,255,0.1); -fx-mouse-transparent: true;");
-            line.setTranslateX(currentWidth * 0.25);
-
-            videoPreviewStack.getChildren().addAll(film, grain, line);
-        } else if ("Heart Stickers".equals(selection) || "Star Explosion".equals(selection)) {
-            javafx.scene.layout.Pane stickerPane = new javafx.scene.layout.Pane();
-            stickerPane.setPrefSize(currentWidth, currentHeight);
-            stickerPane.setMouseTransparent(true);
-            String symbol = "Heart Stickers".equals(selection) ? "❤" : "✨";
-            String color = "Heart Stickers".equals(selection) ? "#FF6B6B" : "#FFD93D";
-            
-            for (int i = 0; i < 7; i++) {
-                Label sticker = new Label(symbol);
-                double size = 18 + Math.random() * 20;
-                sticker.setStyle("-fx-text-fill: " + color + "; -fx-font-size: " + size + "px; " +
-                               "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 5, 0, 0, 2);");
-                
-                double x, y;
-                double borderMargin = 50; 
-                int side = (int)(Math.random() * 4);
-                if (side == 0) { // Top
-                    x = 20 + Math.random() * (currentWidth - 40);
-                    y = Math.random() * borderMargin;
-                } else if (side == 1) { // Bottom
-                    x = 20 + Math.random() * (currentWidth - 40);
-                    y = currentHeight - borderMargin - (Math.random() * borderMargin);
-                } else if (side == 2) { // Left
-                    x = Math.random() * borderMargin;
-                    y = 20 + Math.random() * (currentHeight - 40);
-                } else { // Right
-                    x = currentWidth - borderMargin - (Math.random() * borderMargin);
-                    y = 20 + Math.random() * (currentHeight - 40);
-                }
-
-                sticker.setLayoutX(x);
-                sticker.setLayoutY(y);
-                sticker.setRotate(Math.random() * 360);
-                stickerPane.getChildren().add(sticker);
-            }
-            videoPreviewStack.getChildren().add(stickerPane);
-        } else if ("Birthday Party".equals(selection)) {
-            javafx.scene.layout.Pane bdayPane = new javafx.scene.layout.Pane();
-            bdayPane.setPrefSize(currentWidth, currentHeight);
-            bdayPane.setMouseTransparent(true);
-            
-            String[] emojis = {"🎈", "🎉", "🎂", "🎁", "✨"};
-            for (int i = 0; i < 7; i++) {
-                Label emoji = new Label(emojis[(int)(Math.random() * emojis.length)]);
-                emoji.setStyle("-fx-font-size: 24px;");
-                
-                double x, y;
-                double borderMargin = 50;
-                int side = (int)(Math.random() * 4);
-                if (side == 0) { // Top
-                    x = 20 + Math.random() * (currentWidth - 40);
-                    y = Math.random() * borderMargin;
-                } else if (side == 1) { // Bottom
-                    x = 20 + Math.random() * (currentWidth - 40);
-                    y = currentHeight - borderMargin - (Math.random() * borderMargin);
-                } else if (side == 2) { // Left
-                    x = Math.random() * borderMargin;
-                    y = 20 + Math.random() * (currentHeight - 40);
-                } else { // Right
-                    x = currentWidth - borderMargin - (Math.random() * borderMargin);
-                    y = 20 + Math.random() * (currentHeight - 40);
-                }
-                
-                emoji.setLayoutX(x);
-                emoji.setLayoutY(y);
-                bdayPane.getChildren().add(emoji);
-            }
-            
-            Region overlay = new Region();
-            overlay.setPrefSize(currentWidth, currentHeight);
-            overlay.setStyle("-fx-border-color: #FF69B4; -fx-border-width: 5; -fx-border-style: dashed; -fx-mouse-transparent: true;");
-            videoPreviewStack.getChildren().addAll(overlay, bdayPane);
-        }
+        boolean isPlaying = btnVideoPlay != null && "⏸".equals(btnVideoPlay.getText());
+        setGraphicAnimationsPlaying(isPlaying);
     }
 
     private void updatePhotoDurationList() {
-        if (photoDurationList == null) return;
+        if (photoDurationList == null)
+            return;
         photoDurationList.getChildren().clear();
         for (int i = 0; i < videoPhotos.size(); i++) {
             final int index = i;
             HBox row = new HBox(8);
             row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
             row.setMaxWidth(Double.MAX_VALUE);
-            
+
             Label lbl = new Label("Image " + (i + 1) + ":");
             lbl.setMinWidth(60);
-            lbl.setStyle("-fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-font-size: 11; -fx-text-fill: #4A4B57;");
-            
+            lbl.setStyle(
+                    "-fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif; -fx-font-size: 11; -fx-text-fill: #4A4B57;");
+
             TextField tf = new TextField(String.valueOf(photoDurations.get(i)));
             tf.setPrefWidth(55);
-            tf.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #E2E8F0; -fx-border-radius: 8; -fx-padding: 3 8; -fx-font-size: 11;");
+            tf.setStyle(
+                    "-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #E2E8F0; -fx-border-radius: 8; -fx-padding: 3 8; -fx-font-size: 11;");
             tf.textProperty().addListener((obs, oldVal, newVal) -> {
                 try {
                     if (newVal != null && !newVal.isBlank()) {
@@ -316,32 +422,21 @@ public class VideoController {
                     // Keep previous or default
                 }
             });
-            
+
             Label sec = new Label("sec");
             sec.setStyle("-fx-font-size: 10; -fx-text-fill: #94A3B8;");
-            
+
             row.getChildren().addAll(lbl, tf, sec);
             HBox.setHgrow(tf, javafx.scene.layout.Priority.NEVER);
             photoDurationList.getChildren().add(row);
         }
     }
 
-    @FXML public void handleShareWhatsApp() { 
+    @FXML
+    public void handleShareWhatsApp() {
         if (isVideoMode || !videoPhotos.isEmpty()) {
             // In video mode, we trigger the MainController share directly
-            MainController.getInstance().handleShareWhatsApp(); 
-        } else {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("No Media");
-            alert.setHeaderText(null);
-            alert.setContentText("Please upload a video or photos first.");
-            alert.showAndWait();
-        }
-    }
-    
-    @FXML public void handleShareEmail() { 
-        if (isVideoMode || !videoPhotos.isEmpty()) {
-            MainController.getInstance().handleShareEmail(); 
+            MainController.getInstance().handleShareWhatsApp();
         } else {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("No Media");
@@ -351,17 +446,33 @@ public class VideoController {
         }
     }
 
-    @FXML public void handleUndo() {
+    @FXML
+    public void handleShareEmail() {
+        if (isVideoMode || !videoPhotos.isEmpty()) {
+            MainController.getInstance().handleShareEmail();
+        } else {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Media");
+            alert.setHeaderText(null);
+            alert.setContentText("Please upload a video or photos first.");
+            alert.showAndWait();
+        }
+    }
+
+    @FXML
+    public void handleUndo() {
         // Video specific undo if needed, currently resets trim
         handleTrimBackReset();
         handleTrimFrontReset();
     }
 
-    @FXML public void handleRedo() {
+    @FXML
+    public void handleRedo() {
         // Placeholder for video redo
     }
 
-    @FXML public void handleDelete() {
+    @FXML
+    public void handleDelete() {
         if (mediaPlayer != null) {
             mediaPlayer.stop();
             mediaPlayer.dispose();
@@ -370,63 +481,208 @@ public class VideoController {
         videoPhotos.clear();
         photoDurations.clear();
         isVideoMode = false;
-        
+
         videoMediaView.setVisible(false);
         videoMediaView.setManaged(false);
         videoPreviewImage.setVisible(false);
         videoPreviewImage.setManaged(false);
-        
+
         videoPlayerContainer.setVisible(false);
         videoPlayerContainer.setManaged(false);
         videoDropZone.setVisible(true);
         videoDropZone.setManaged(true);
-        
+        // Hide the back button when returning to the drop zone
+        if (btnBackToUpload != null) {
+            btnBackToUpload.setVisible(false);
+            btnBackToUpload.setManaged(false);
+        }
+
         MainController.getInstance().setCurrentImagePath(null);
         MainController.getInstance().setCurrentFileName("No file open");
     }
 
-    @FXML public void handleZoomIn() {
+    /**
+     * Returns the video pane to its initial "drop zone" state without navigating
+     * away.
+     */
+    @FXML
+    public void handleBackToUpload() {
+        // Stop any active playback
+        if (videoTimeline != null) {
+            videoTimeline.stop();
+            videoTimeline = null;
+        }
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.dispose();
+            mediaPlayer = null;
+        }
+
+        // Clear all session data
+        videoPhotos.clear();
+        photoDurations.clear();
+        isVideoMode = false;
+        currentVideoIndex = 0;
+        trimFrontSec = 0;
+        trimBackSec = 0;
+
+        // Reset preview
+        videoPreviewImage.setImage(null);
+        videoMediaView.setMediaPlayer(null);
+        videoMediaView.setVisible(false);
+        videoMediaView.setManaged(false);
+        videoPreviewImage.setVisible(false);
+        videoPreviewImage.setManaged(false);
+
+        // Reset zoom
+        if (videoPreviewStack != null) {
+            videoPreviewStack.setScaleX(1.0);
+            videoPreviewStack.setScaleY(1.0);
+        }
+
+        // Reset play button
+        if (btnVideoPlay != null)
+            btnVideoPlay.setText("▶");
+        if (videoSeekBar != null)
+            videoSeekBar.setValue(0);
+
+        // Restore UI to the upload/drop-zone screen
+        videoPlayerContainer.setVisible(false);
+        videoPlayerContainer.setManaged(false);
+        videoDropZone.setVisible(true);
+        videoDropZone.setManaged(true);
+
+        // Hide back button (we're back at the start)
+        if (btnBackToUpload != null) {
+            btnBackToUpload.setVisible(false);
+            btnBackToUpload.setManaged(false);
+        }
+
+        // Restore default controls visibility
+        if (synthesisControls != null) {
+            synthesisControls.setVisible(true);
+            synthesisControls.setManaged(true);
+        }
+        if (trimControls != null) {
+            trimControls.setVisible(false);
+            trimControls.setManaged(false);
+        }
+        if (photoDurationList != null)
+            photoDurationList.getChildren().clear();
+
+        MainController.getInstance().setCurrentImagePath(null);
+        MainController.getInstance().setCurrentFileName("No file open");
+    }
+
+    @FXML
+    public void handleZoomIn() {
         if (videoPreviewStack != null) {
             double currentScale = videoPreviewStack.getScaleX();
-            videoPreviewStack.setScaleX(currentScale + 0.1);
-            videoPreviewStack.setScaleY(currentScale + 0.1);
+            double newScale = Math.min(5.0, currentScale + 0.1);
+            videoPreviewStack.setScaleX(newScale);
+            videoPreviewStack.setScaleY(newScale);
         }
     }
 
-    @FXML public void handleZoomOut() {
+    @FXML
+    public void handleZoomOut() {
         if (videoPreviewStack != null) {
             double currentScale = videoPreviewStack.getScaleX();
-            videoPreviewStack.setScaleX(Math.max(0.1, currentScale - 0.1));
-            videoPreviewStack.setScaleY(Math.max(0.1, currentScale - 0.1));
+            double newScale = Math.max(0.1, currentScale - 0.1);
+            videoPreviewStack.setScaleX(newScale);
+            videoPreviewStack.setScaleY(newScale);
         }
+    }
+
+    @FXML
+    public void handleResetAll() {
+        // Reset zoom
+        if (videoPreviewStack != null) {
+            videoPreviewStack.setScaleX(1.0);
+            videoPreviewStack.setScaleY(1.0);
+        }
+        // Reset overlay text
+        if (videoOverlayText != null)
+            videoOverlayText.clear();
+        if (videoOverlayLabel != null) {
+            videoOverlayLabel.setText("");
+            videoOverlayLabel.setTranslateX(0);
+            videoOverlayLabel.setTranslateY(0);
+            videoOverlayLabel.setOpacity(1.0);
+            videoOverlayLabel.setStyle(
+                    "-fx-text-fill: white; -fx-font-size: 20; -fx-padding: 15; -fx-font-family: 'Georgia'; -fx-font-style: italic;");
+        }
+        // Reset sliders
+        if (videoOpacitySlider != null)
+            videoOpacitySlider.setValue(1.0);
+        if (videoTextXSlider != null)
+            videoTextXSlider.setValue(0);
+        if (videoTextYSlider != null)
+            videoTextYSlider.setValue(0);
+        // Reset colour picker
+        if (videoTextColorPicker != null)
+            videoTextColorPicker.setValue(javafx.scene.paint.Color.WHITE);
+        // Reset font
+        if (videoFontCombo != null)
+            videoFontCombo.setValue("System");
+        // Reset graphics overlay
+        if (videoGraphicsCombo != null) {
+            videoGraphicsCombo.setValue("None");
+            applyGraphicsOverlay();
+        }
+        // Reset trim
+        trimFrontSec = 0;
+        trimBackSec = 0;
+        if (videoTrimInput != null)
+            videoTrimInput.clear();
+        if (btnTrimFront != null)
+            btnTrimFront.setStyle(
+                    "-fx-background-color: #F39C12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;");
+        if (btnTrimBack != null)
+            btnTrimBack.setStyle(
+                    "-fx-background-color: #F39C12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;");
     }
 
     private void handleTrimFrontReset() {
         trimFrontSec = 0;
-        if (mediaPlayer != null) mediaPlayer.seek(Duration.ZERO);
+        if (mediaPlayer != null)
+            mediaPlayer.seek(Duration.ZERO);
     }
 
     private void handleTrimBackReset() {
         trimBackSec = 0;
     }
+    private void updateTextSliderBounds(double displayWidth, double displayHeight) {
+        if (videoTextXSlider != null) {
+            videoTextXSlider.setMin(-displayWidth / 2);
+            videoTextXSlider.setMax(displayWidth / 2);
+        }
+        if (videoTextYSlider != null) {
+            videoTextYSlider.setMin(-displayHeight / 2);
+            videoTextYSlider.setMax(displayHeight / 2);
+        }
+    }
 
     private void updateOverlayStyle() {
-        if (videoOverlayLabel == null) return;
-        
+        if (videoOverlayLabel == null)
+            return;
+
         String color = "#" + videoTextColorPicker.getValue().toString().substring(2, 8);
         String font = videoFontCombo.getValue();
         double opacity = videoOpacitySlider.getValue();
-        
+        double fontSize = videoFontSizeSlider != null ? videoFontSizeSlider.getValue() : 48;
+
         videoOverlayLabel.setStyle("-fx-text-fill: " + color + "; " +
-                                  "-fx-font-family: '" + font + "'; " +
-                                  "-fx-font-size: 20; " +
-                                  "-fx-padding: 15; " +
-                                  "-fx-font-style: italic;");
+                "-fx-font-family: '" + font + "'; " +
+                "-fx-font-size: " + fontSize + "; " +
+                "-fx-padding: 15; " +
+                "-fx-font-style: italic;");
         videoOverlayLabel.setOpacity(opacity);
     }
 
     public void updateScaling() {
-        if (lastKnownMediaWidth <= 0 || lastKnownMediaHeight <= 0) return;
+        if (lastKnownMediaWidth <= 0 || lastKnownMediaHeight <= 0)
+            return;
 
         // Ensure the MediaView and Image containers are visible if they have content
         if (isVideoMode) {
@@ -443,7 +699,7 @@ public class VideoController {
 
         // Use even smaller dimensions to ensure it never hits the bounds
         boolean expanded = MainController.getInstance().isSidebarExpanded();
-        double maxWidth = expanded ? 600 : 800;  
+        double maxWidth = expanded ? 600 : 800;
         double maxHeight = expanded ? 380 : 500;
 
         double scale = Math.min(maxWidth / lastKnownMediaWidth, maxHeight / lastKnownMediaHeight);
@@ -454,13 +710,16 @@ public class VideoController {
         videoMediaView.setFitHeight(displayHeight);
         videoPreviewImage.setFitWidth(displayWidth);
         videoPreviewImage.setFitHeight(displayHeight);
-        
+
         videoPreviewStack.setPrefSize(displayWidth, displayHeight);
         videoPreviewStack.setMaxSize(displayWidth, displayHeight);
         videoPreviewStack.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
 
+        updateTextSliderBounds(displayWidth, displayHeight);
+
         // Refresh overlays if graphic is active
-        if (videoGraphicsCombo != null && videoGraphicsCombo.getValue() != null && !"None".equals(videoGraphicsCombo.getValue())) {
+        if (videoGraphicsCombo != null && videoGraphicsCombo.getValue() != null
+                && !"None".equals(videoGraphicsCombo.getValue())) {
             applyGraphicsOverlay();
         }
     }
@@ -468,7 +727,8 @@ public class VideoController {
     @FXML
     public void handleUploadVideo() {
         javafx.stage.FileChooser fc = new javafx.stage.FileChooser();
-        fc.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Video Files", "*.mp4", "*.mkv", "*.avi"));
+        fc.getExtensionFilters()
+                .add(new javafx.stage.FileChooser.ExtensionFilter("Video Files", "*.mp4", "*.mkv", "*.avi"));
         File file = fc.showOpenDialog(null);
         if (file != null) {
             MainController.getInstance().setCurrentImagePath(file.getAbsolutePath());
@@ -476,8 +736,9 @@ public class VideoController {
             isVideoMode = true;
             videoPhotos.clear();
             photoDurations.clear();
-            
-            if (videoTimeline != null) videoTimeline.stop();
+
+            if (videoTimeline != null)
+                videoTimeline.stop();
             if (mediaPlayer != null) {
                 mediaPlayer.stop();
                 mediaPlayer.dispose();
@@ -487,7 +748,7 @@ public class VideoController {
                 Media media = new Media(file.toURI().toString());
                 mediaPlayer = new MediaPlayer(media);
                 videoMediaView.setMediaPlayer(mediaPlayer);
-                
+
                 mediaPlayer.setOnReady(() -> {
                     double duration = media.getDuration().toSeconds();
                     photoDurations.add(duration);
@@ -495,13 +756,13 @@ public class VideoController {
 
                     lastKnownMediaWidth = media.getWidth();
                     lastKnownMediaHeight = media.getHeight();
-                    
+
                     // Force visibility for MediaView when video is ready
                     videoMediaView.setVisible(true);
                     videoMediaView.setManaged(true);
                     videoPreviewImage.setVisible(false);
                     videoPreviewImage.setManaged(false);
-                    
+
                     updateScaling();
                 });
 
@@ -510,10 +771,10 @@ public class VideoController {
                         double total = mediaPlayer.getTotalDuration().toSeconds();
                         if (total > 0) {
                             double current = newTime.toSeconds();
-                            
+
                             // Define the playable range
                             double playableDuration = total - trimFrontSec - trimBackSec;
-                            
+
                             // If we exceed the 'back' trim point, stop or loop back to front
                             if (trimBackSec > 0 && current >= (total - trimBackSec)) {
                                 mediaPlayer.seek(Duration.seconds(trimFrontSec));
@@ -522,7 +783,7 @@ public class VideoController {
                                     btnVideoPlay.setText("▶");
                                 }
                             }
-                            
+
                             // Calculate progress relative to the TRIMMED range
                             // 0% is now trimFrontSec, 100% is (total - trimBackSec)
                             double relativeCurrent = Math.max(0, current - trimFrontSec);
@@ -543,7 +804,7 @@ public class VideoController {
                 videoPreviewImage.setManaged(false);
                 videoMediaView.setVisible(true);
                 videoMediaView.setManaged(true);
-                
+
                 synthesisControls.setVisible(false);
                 synthesisControls.setManaged(false);
                 trimControls.setVisible(true);
@@ -557,13 +818,14 @@ public class VideoController {
     @FXML
     public void handleSelectPhotos() {
         javafx.stage.FileChooser fc = new javafx.stage.FileChooser();
-        fc.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg", "*.bmp"));
+        fc.getExtensionFilters()
+                .add(new javafx.stage.FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg", "*.bmp"));
         List<File> files = fc.showOpenMultipleDialog(null);
         if (files != null && !files.isEmpty()) {
             isVideoMode = false;
             videoPhotos.clear();
             photoDurations.clear();
-            
+
             if (mediaPlayer != null) {
                 mediaPlayer.stop();
                 mediaPlayer.dispose();
@@ -574,37 +836,19 @@ public class VideoController {
                 videoPhotos.add(f.getAbsolutePath());
                 photoDurations.add(3.0);
             }
-            
+
             updatePhotoDurationList();
             switchToPlayerMode();
             videoMediaView.setVisible(false);
             videoMediaView.setManaged(false);
             videoPreviewImage.setVisible(true);
             videoPreviewImage.setManaged(true);
-            
+
             showVideoFrame(0);
 
-            // Resize based on first photo within a limited box
-            if (!videoPhotos.isEmpty()) {
-                File firstFile = new File(videoPhotos.get(0));
-                Image firstImg = new Image(firstFile.toURI().toString());
-                double w = firstImg.getWidth();
-                double h = firstImg.getHeight();
-                if (w > 0 && h > 0) {
-                    double maxWidth = 800;
-                    double maxHeight = 500;
-                    double scale = Math.min(maxWidth / w, maxHeight / h);
-                    
-                    double displayWidth = w * scale;
-                    double displayHeight = h * scale;
-
-                    videoPreviewImage.setFitWidth(displayWidth);
-                    videoPreviewImage.setFitHeight(displayHeight);
-                    videoPreviewStack.setPrefSize(displayWidth, displayHeight);
-                    videoPreviewStack.setMaxSize(displayWidth, displayHeight);
-                    videoPreviewStack.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
-                }
-            }
+            // Compute and store a fixed display size (max 800×500) so the view
+            // never shrinks when the Play button is pressed.
+            applyAndStorePhotoScaling();
 
             synthesisControls.setVisible(true);
             synthesisControls.setManaged(true);
@@ -615,20 +859,24 @@ public class VideoController {
 
     @FXML
     public void handleTrimFront() {
-        if (!isVideoMode || mediaPlayer == null || videoTrimInput.getText().isEmpty()) return;
+        if (!isVideoMode || mediaPlayer == null || videoTrimInput.getText().isEmpty())
+            return;
         try {
             double trimSec = Double.parseDouble(videoTrimInput.getText());
             double currentTotal = mediaPlayer.getTotalDuration().toSeconds();
-            if (trimSec >= (currentTotal - trimBackSec)) return;
+            if (trimSec >= (currentTotal - trimBackSec))
+                return;
 
             trimFrontSec = trimSec;
             mediaPlayer.seek(Duration.seconds(trimFrontSec));
             videoSeekBar.setValue(0); // Immediately reset slider to the new start point
-            
+
             // Visual feedback for buttons
-            btnTrimFront.setStyle("-fx-background-color: #A04000; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8;");
-            btnTrimBack.setStyle("-fx-background-color: #F39C12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8;");
-            
+            btnTrimFront.setStyle(
+                    "-fx-background-color: #A04000; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8;");
+            btnTrimBack.setStyle(
+                    "-fx-background-color: #F39C12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8;");
+
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setContentText("Video will now start from " + trimSec + "s");
             alert.show();
@@ -639,18 +887,22 @@ public class VideoController {
 
     @FXML
     public void handleTrimBack() {
-        if (!isVideoMode || mediaPlayer == null || videoTrimInput.getText().isEmpty()) return;
+        if (!isVideoMode || mediaPlayer == null || videoTrimInput.getText().isEmpty())
+            return;
         try {
             double trimSec = Double.parseDouble(videoTrimInput.getText());
             double currentTotal = mediaPlayer.getTotalDuration().toSeconds();
-            if (trimSec >= (currentTotal - trimFrontSec)) return;
+            if (trimSec >= (currentTotal - trimFrontSec))
+                return;
 
             trimBackSec = trimSec;
-            
+
             // Visual feedback for buttons
-            btnTrimBack.setStyle("-fx-background-color: #A04000; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8;");
-            btnTrimFront.setStyle("-fx-background-color: #F39C12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8;");
-            
+            btnTrimBack.setStyle(
+                    "-fx-background-color: #A04000; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8;");
+            btnTrimFront.setStyle(
+                    "-fx-background-color: #F39C12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8;");
+
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setContentText("Video will now cut " + trimSec + "s from the back.");
             alert.show();
@@ -664,12 +916,18 @@ public class VideoController {
         videoDropZone.setManaged(false);
         videoPlayerContainer.setVisible(true);
         videoPlayerContainer.setManaged(true);
+        // Show the back button once media is loaded
+        if (btnBackToUpload != null) {
+            btnBackToUpload.setVisible(true);
+            btnBackToUpload.setManaged(true);
+        }
     }
 
     @FXML
     public void handleSyncFavourites() {
         MainController main = MainController.getInstance();
-        if (main == null) return;
+        if (main == null)
+            return;
 
         List<String> editedFiles = main.getEditedFiles();
         Properties annotationsDB = main.getAnnotationsDB();
@@ -714,7 +972,7 @@ public class VideoController {
         gridContainer.setVgap(15);
         gridContainer.setPadding(new javafx.geometry.Insets(10));
         gridContainer.setStyle("-fx-background-color: white;");
-        
+
         scrollPane.setContent(gridContainer);
         scrollPane.setFitToWidth(true);
         scrollPane.setPrefHeight(400);
@@ -723,7 +981,8 @@ public class VideoController {
         for (String path : favouritedPaths) {
             VBox itemBox = new VBox(5);
             itemBox.setAlignment(javafx.geometry.Pos.CENTER);
-            itemBox.setStyle("-fx-border-color: #E0E0E0; -fx-border-radius: 8; -fx-padding: 8; -fx-background-color: #FFFFFF;");
+            itemBox.setStyle(
+                    "-fx-border-color: #E0E0E0; -fx-border-radius: 8; -fx-padding: 8; -fx-background-color: #FFFFFF;");
 
             File f = new File(path);
             ImageView iv = new ImageView(new Image(f.toURI().toString()));
@@ -735,36 +994,42 @@ public class VideoController {
             cb.setUserData(path);
             cb.setSelected(true);
             checkBoxes.add(cb);
-            
+
             itemBox.getChildren().addAll(iv, cb);
             itemBox.setOnMouseClicked(e -> {
                 cb.setSelected(!cb.isSelected());
                 if (cb.isSelected()) {
-                    itemBox.setStyle("-fx-border-color: #4F5BD5; -fx-border-width: 2; -fx-border-radius: 8; -fx-padding: 7; -fx-background-color: #EEF2FF;");
+                    itemBox.setStyle(
+                            "-fx-border-color: #4F5BD5; -fx-border-width: 2; -fx-border-radius: 8; -fx-padding: 7; -fx-background-color: #EEF2FF;");
                 } else {
-                    itemBox.setStyle("-fx-border-color: #E0E0E0; -fx-border-width: 1; -fx-border-radius: 8; -fx-padding: 8; -fx-background-color: #FFFFFF;");
+                    itemBox.setStyle(
+                            "-fx-border-color: #E0E0E0; -fx-border-width: 1; -fx-border-radius: 8; -fx-padding: 8; -fx-background-color: #FFFFFF;");
                 }
                 // Preview logic
                 videoPreviewImage.setImage(iv.getImage());
             });
             // Set initial state
-            itemBox.setStyle("-fx-border-color: #4F5BD5; -fx-border-width: 2; -fx-border-radius: 8; -fx-padding: 7; -fx-background-color: #EEF2FF;");
-            
+            itemBox.setStyle(
+                    "-fx-border-color: #4F5BD5; -fx-border-width: 2; -fx-border-radius: 8; -fx-padding: 7; -fx-background-color: #EEF2FF;");
+
             gridContainer.getChildren().add(itemBox);
         }
 
         Button btnSelectAll = new Button("Select All");
-        btnSelectAll.setStyle("-fx-background-color: #FFFFFF; -fx-border-color: #4F5BD5; -fx-text-fill: #4F5BD5; -fx-border-radius: 5;");
+        btnSelectAll.setStyle(
+                "-fx-background-color: #FFFFFF; -fx-border-color: #4F5BD5; -fx-text-fill: #4F5BD5; -fx-border-radius: 5;");
         btnSelectAll.setOnAction(e -> checkBoxes.forEach(cb -> cb.setSelected(true)));
-        
+
         Button btnDeselectAll = new Button("Deselect All");
-        btnDeselectAll.setStyle("-fx-background-color: #FFFFFF; -fx-border-color: #8892B0; -fx-text-fill: #8892B0; -fx-border-radius: 5;");
+        btnDeselectAll.setStyle(
+                "-fx-background-color: #FFFFFF; -fx-border-color: #8892B0; -fx-text-fill: #8892B0; -fx-border-radius: 5;");
         btnDeselectAll.setOnAction(e -> checkBoxes.forEach(cb -> cb.setSelected(false)));
 
         HBox topActions = new HBox(10, btnSelectAll, btnDeselectAll);
 
         Button btnSynthesize = new Button("Create Video");
-        btnSynthesize.setStyle("-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 5;");
+        btnSynthesize.setStyle(
+                "-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 5;");
         btnSynthesize.setOnAction(e -> {
             videoPhotos.clear();
             photoDurations.clear();
@@ -779,6 +1044,7 @@ public class VideoController {
                 switchToPlayerMode();
                 updatePhotoDurationList();
                 showVideoFrame(0);
+                applyAndStorePhotoScaling();
                 synthesisControls.setVisible(true);
                 synthesisControls.setManaged(true);
                 trimControls.setVisible(false);
@@ -800,7 +1066,8 @@ public class VideoController {
     }
 
     private void showVideoFrame(int index) {
-        if (videoPhotos.isEmpty()) return;
+        if (videoPhotos.isEmpty())
+            return;
         currentVideoIndex = index;
         File f = new File(videoPhotos.get(index));
         Image img = new Image(f.toURI().toString());
@@ -808,13 +1075,49 @@ public class VideoController {
 
         lastKnownMediaWidth = img.getWidth();
         lastKnownMediaHeight = img.getHeight();
-        updateScaling();
-        
+
+        // Reapply the dimensions fixed at load time so the container
+        // never resizes between frames or on the first play-button press.
+        if (storedFitWidth > 0 && storedFitHeight > 0) {
+            videoPreviewImage.setFitWidth(storedFitWidth);
+            videoPreviewImage.setFitHeight(storedFitHeight);
+            videoPreviewStack.setPrefSize(storedFitWidth, storedFitHeight);
+            videoPreviewStack.setMaxSize(storedFitWidth, storedFitHeight);
+            videoPreviewStack.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+        } else {
+            // First-time call before storage is set: fall back to updateScaling()
+            updateScaling();
+        }
+
         double timeBefore = 0;
-        for (int i = 0; i < index; i++) timeBefore += photoDurations.get(i);
+        for (int i = 0; i < index; i++)
+            timeBefore += photoDurations.get(i);
         double total = getTotalDuration();
         if (!videoSeekBar.isValueChanging()) {
             videoSeekBar.setValue(total > 0 ? (timeBefore / total) * 100 : 0);
+        }
+    }
+
+    /**
+     * Computes display dimensions from the first photo (max 800x500), stores them,
+     * and applies them so every subsequent showVideoFrame reuses the exact same size.
+     */
+    private void applyAndStorePhotoScaling() {
+        if (videoPhotos.isEmpty()) return;
+        File firstFile = new File(videoPhotos.get(0));
+        Image firstImg = new Image(firstFile.toURI().toString());
+        double w = firstImg.getWidth();
+        double h = firstImg.getHeight();
+        if (w > 0 && h > 0) {
+            double scale = Math.min(800.0 / w, 500.0 / h);
+            storedFitWidth  = w * scale;
+            storedFitHeight = h * scale;
+            videoPreviewImage.setFitWidth(storedFitWidth);
+            videoPreviewImage.setFitHeight(storedFitHeight);
+            videoPreviewStack.setPrefSize(storedFitWidth, storedFitHeight);
+            videoPreviewStack.setMaxSize(storedFitWidth, storedFitHeight);
+            videoPreviewStack.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+            updateTextSliderBounds(storedFitWidth, storedFitHeight);
         }
     }
 
@@ -824,31 +1127,37 @@ public class VideoController {
             if (mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
                 mediaPlayer.pause();
                 btnVideoPlay.setText("▶");
+                setGraphicAnimationsPlaying(false);
             } else {
                 mediaPlayer.play();
                 btnVideoPlay.setText("⏸");
+                setGraphicAnimationsPlaying(true);
             }
             return;
         }
 
-        if (videoPhotos.isEmpty()) return;
+        if (videoPhotos.isEmpty())
+            return;
 
         if (videoTimeline != null && videoTimeline.getStatus() == javafx.animation.Animation.Status.RUNNING) {
             videoTimeline.pause();
             btnVideoPlay.setText("▶");
             btnVideoPlay.setShape(null); // Clear SVG shape if any
+            setGraphicAnimationsPlaying(false);
             return;
-        } 
-        
+        }
+
         if (videoTimeline != null && videoTimeline.getStatus() == javafx.animation.Animation.Status.PAUSED) {
             videoTimeline.play();
             btnVideoPlay.setText("⏸");
             btnVideoPlay.setShape(null);
+            setGraphicAnimationsPlaying(true);
             return;
         }
 
-        if (videoTimeline != null) videoTimeline.stop();
-        
+        if (videoTimeline != null)
+            videoTimeline.stop();
+
         videoTimeline = new javafx.animation.Timeline();
         final int totalFrames = videoPhotos.size();
         final double totalDuration = getTotalDuration();
@@ -858,30 +1167,29 @@ public class VideoController {
         for (int i = 0; i < totalFrames; i++) {
             final int frameIndex = i;
             double duration = photoDurations.get(i);
-            
+
             // Show the frame/image at the start of its duration
             videoTimeline.getKeyFrames().add(new javafx.animation.KeyFrame(
-                Duration.seconds(currentTime),
-                e -> {
-                    showVideoFrame(frameIndex);
-                    double timeBefore = 0;
-                    for(int k=0; k<frameIndex; k++) timeBefore += photoDurations.get(k);
-                    videoSeekBar.setValue((timeBefore / totalDuration) * 100);
-                }
-            ));
+                    Duration.seconds(currentTime),
+                    e -> {
+                        showVideoFrame(frameIndex);
+                        double timeBefore = 0;
+                        for (int k = 0; k < frameIndex; k++)
+                            timeBefore += photoDurations.get(k);
+                        videoSeekBar.setValue((timeBefore / totalDuration) * 100);
+                    }));
 
             // Smooth seekbar updating during this part's duration
             double step = 0.1;
             for (double t = step; t < duration; t += step) {
                 final double timeAtStep = currentTime + t;
                 videoTimeline.getKeyFrames().add(new javafx.animation.KeyFrame(
-                    Duration.seconds(timeAtStep),
-                    e -> {
-                        if (!videoSeekBar.isValueChanging()) {
-                            videoSeekBar.setValue((timeAtStep / totalDuration) * 100);
-                        }
-                    }
-                ));
+                        Duration.seconds(timeAtStep),
+                        e -> {
+                            if (!videoSeekBar.isValueChanging()) {
+                                videoSeekBar.setValue((timeAtStep / totalDuration) * 100);
+                            }
+                        }));
             }
             currentTime += duration;
         }
@@ -892,11 +1200,13 @@ public class VideoController {
             btnVideoPlay.setShape(null);
             currentVideoIndex = 0;
             videoSeekBar.setValue(100);
+            setGraphicAnimationsPlaying(false);
         });
 
         videoTimeline.play();
         btnVideoPlay.setText("⏸");
         btnVideoPlay.setShape(null);
+        setGraphicAnimationsPlaying(true);
     }
 
     @FXML
@@ -907,18 +1217,22 @@ public class VideoController {
             btnVideoPlay.setText("⏸");
             return;
         }
-        if (videoPhotos.isEmpty()) return;
-        boolean wasPlaying = videoTimeline != null && videoTimeline.getStatus() == javafx.animation.Animation.Status.RUNNING;
-        
-        if (videoTimeline != null) videoTimeline.stop();
-        
+        if (videoPhotos.isEmpty())
+            return;
+        boolean wasPlaying = videoTimeline != null
+                && videoTimeline.getStatus() == javafx.animation.Animation.Status.RUNNING;
+
+        if (videoTimeline != null)
+            videoTimeline.stop();
+
         currentVideoIndex = Math.max(0, currentVideoIndex - 1);
         showVideoFrame(currentVideoIndex);
-        
+
         if (wasPlaying) {
             handleVideoPlayPause();
             double timeBefore = 0;
-            for (int i = 0; i < currentVideoIndex; i++) timeBefore += photoDurations.get(i);
+            for (int i = 0; i < currentVideoIndex; i++)
+                timeBefore += photoDurations.get(i);
             videoTimeline.jumpTo(Duration.seconds(timeBefore));
         } else {
             btnVideoPlay.setText("▶");
@@ -935,18 +1249,22 @@ public class VideoController {
             btnVideoPlay.setText("▶");
             return;
         }
-        if (videoPhotos.isEmpty()) return;
-        boolean wasPlaying = videoTimeline != null && videoTimeline.getStatus() == javafx.animation.Animation.Status.RUNNING;
-        
-        if (videoTimeline != null) videoTimeline.stop();
-        
+        if (videoPhotos.isEmpty())
+            return;
+        boolean wasPlaying = videoTimeline != null
+                && videoTimeline.getStatus() == javafx.animation.Animation.Status.RUNNING;
+
+        if (videoTimeline != null)
+            videoTimeline.stop();
+
         currentVideoIndex = Math.min(videoPhotos.size() - 1, currentVideoIndex + 1);
         showVideoFrame(currentVideoIndex);
 
         if (wasPlaying) {
             handleVideoPlayPause();
             double timeBefore = 0;
-            for (int i = 0; i < currentVideoIndex; i++) timeBefore += photoDurations.get(i);
+            for (int i = 0; i < currentVideoIndex; i++)
+                timeBefore += photoDurations.get(i);
             videoTimeline.jumpTo(Duration.seconds(timeBefore));
         } else {
             btnVideoPlay.setText("▶");
@@ -956,15 +1274,18 @@ public class VideoController {
 
     private double getTotalDuration() {
         double total = 0;
-        for (Double d : photoDurations) total += d;
+        for (Double d : photoDurations)
+            total += d;
         return total;
     }
 
-    @FXML public void showShareTab() {
+    @FXML
+    public void showShareTab() {
         MainController.getInstance().showShareTab();
     }
 
-    @FXML public void handleRenderSave() {
+    @FXML
+    public void handleRenderSave() {
         if (videoPhotos.isEmpty() && !isVideoMode) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setContentText("No media to save. Please upload a video or synthesize photos first.");
@@ -972,7 +1293,8 @@ public class VideoController {
             return;
         }
 
-        if (mediaPlayer == null && isVideoMode) return;
+        if (mediaPlayer == null && isVideoMode)
+            return;
 
         javafx.stage.FileChooser fc = new javafx.stage.FileChooser();
         fc.setTitle("Render Edited Video");
@@ -985,7 +1307,8 @@ public class VideoController {
         }
     }
 
-    @FXML public void handleSaveToGallery() {
+    @FXML
+    public void handleSaveToGallery() {
         if (!isVideoMode && videoPhotos.isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setContentText("Please upload a video or synthesize photos first.");
@@ -995,23 +1318,25 @@ public class VideoController {
 
         // Create a temporary file in common gallery location
         File galleryDir = new File("Edited_Gallery");
-        if (!galleryDir.exists()) galleryDir.mkdirs();
-        
+        if (!galleryDir.exists())
+            galleryDir.mkdirs();
+
         String timestamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date());
         String ext = isVideoMode ? ".mp4" : ".mp4"; // Always save as video for synthesis
         File target = new File(galleryDir, "video_" + timestamp + ext);
-        
+
         performFullRender(target);
     }
 
     private File resolveCurrentVideoSource() {
         if (isVideoMode) {
             String currentPath = MainController.getInstance().getCurrentImagePath();
-            if (currentPath == null || currentPath.isBlank()) return null;
+            if (currentPath == null || currentPath.isBlank())
+                return null;
             File file = new File(currentPath);
             return file.exists() ? file : null;
         } else if (!videoPhotos.isEmpty()) {
-            // Return one of the photos just to satisfy the grabber, 
+            // Return one of the photos just to satisfy the grabber,
             // but the renderer logic should know how to handle the photo-to-video mode
             return new File(videoPhotos.get(0));
         }
@@ -1019,7 +1344,8 @@ public class VideoController {
     }
 
     private File ensureExtension(File file, String extension) {
-        if (file.getName().toLowerCase().endsWith(extension.toLowerCase())) return file;
+        if (file.getName().toLowerCase().endsWith(extension.toLowerCase()))
+            return file;
         String parent = file.getParent();
         return parent == null ? new File(file.getName() + extension) : new File(parent, file.getName() + extension);
     }
@@ -1029,13 +1355,17 @@ public class VideoController {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] hashBytes = md.digest(Files.readAllBytes(file.toPath()));
             StringBuilder sb = new StringBuilder();
-            for (byte b : hashBytes) sb.append(String.format("%02x", b));
+            for (byte b : hashBytes)
+                sb.append(String.format("%02x", b));
             return sb.toString();
-        } catch (Exception e) { return file.getAbsolutePath(); }
+        } catch (Exception e) {
+            return file.getAbsolutePath();
+        }
     }
 
     private void performFullRender(File outFile) {
-        if (outFile == null) return;
+        if (outFile == null)
+            return;
         outFile = ensureExtension(outFile, ".mp4");
         final File renderTarget = outFile;
 
@@ -1051,64 +1381,87 @@ public class VideoController {
             double total = 0;
             if (mediaPlayer != null && mediaPlayer.getTotalDuration() != null) {
                 total = mediaPlayer.getTotalDuration().toSeconds() - trimFrontSec - trimBackSec;
-                if (total < 0) total = 0;
+                if (total < 0)
+                    total = 0;
             }
 
             final double startSec = trimFrontSec;
             final double durationSec = total;
 
             ProgressIndicator pi = new ProgressIndicator(0);
+            pi.setPrefSize(80, 80);
+            javafx.scene.layout.VBox content = new javafx.scene.layout.VBox(15, new javafx.scene.control.Label("Exporting your video, please wait..."), pi);
+            content.setAlignment(javafx.geometry.Pos.CENTER);
+            content.setPadding(new javafx.geometry.Insets(20));
+
             Alert progressAlert = new Alert(Alert.AlertType.NONE);
-            progressAlert.setTitle("Rendering");
-            progressAlert.getDialogPane().setContent(pi);
+            progressAlert.setTitle("Rendering Video");
+            progressAlert.getDialogPane().setContent(content);
+            progressAlert.getDialogPane().setPrefSize(350, 200);
             progressAlert.show();
 
-            VideoRenderer.renderVideoWithOverlays(source, outFile, videoPreviewStack, mediaPlayer, startSec, durationSec,
-                new VideoRenderer.RenderProgressCallback() {
-                    @Override
-                    public void onProgress(double progress) {
-                        javafx.application.Platform.runLater(() -> pi.setProgress(progress));
-                    }
+            VideoRenderer.renderVideoWithOverlays(source, outFile, videoPreviewStack, mediaPlayer, startSec,
+                    durationSec,
+                    new VideoRenderer.RenderProgressCallback() {
+                        @Override
+                        public void onProgress(double progress) {
+                            javafx.application.Platform.runLater(() -> pi.setProgress(progress));
+                        }
 
-                    @Override
-                    public void onComplete(File out) {
-                        javafx.application.Platform.runLater(() -> {
-                            progressAlert.close();
-                            try {
-                                // copy to Edited_Gallery and refresh main list via MainController helper
-                                File galleryDir = new File("Edited_Gallery");
-                                if (!galleryDir.exists()) galleryDir.mkdirs();
-                                File dest = new File(galleryDir, out.getName());
-                                Files.copy(out.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        @Override
+                        public void onComplete(File out) {
+                            javafx.application.Platform.runLater(() -> {
+                                progressAlert.close();
                                 try {
-                                    MainController.getInstance().updateSavedMediaStateExternal(dest);
-                                } catch (Exception ignored) {}
-                            } catch (Exception ignored) {}
-                            Alert done = new Alert(Alert.AlertType.INFORMATION);
-                            done.setContentText("Render complete: " + out.getAbsolutePath());
-                            done.show();
-                        });
-                    }
+                                    // copy to Edited_Gallery and refresh main list via MainController helper
+                                    File galleryDir = new File("Edited_Gallery");
+                                    if (!galleryDir.exists())
+                                        galleryDir.mkdirs();
+                                    File dest = new File(galleryDir, out.getName());
+                                    Files.copy(out.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                                    try {
+                                        MainController.getInstance().updateSavedMediaStateExternal(dest);
+                                    } catch (Exception ignored) {
+                                    }
+                                } catch (Exception ignored) {
+                                }
+                                Alert done = new Alert(Alert.AlertType.INFORMATION);
+                                done.setContentText("Render complete: " + out.getAbsolutePath());
+                                done.show();
+                            });
+                        }
 
-                    @Override
-                    public void onError(String message) {
-                        javafx.application.Platform.runLater(() -> {
-                            progressAlert.close();
-                            Alert err = new Alert(Alert.AlertType.ERROR);
-                            err.setContentText("Render failed: " + message);
-                            err.show();
-                        });
-                    }
-                }
-            );
+                        @Override
+                        public void onError(String message) {
+                            javafx.application.Platform.runLater(() -> {
+                                progressAlert.close();
+                                Alert err = new Alert(Alert.AlertType.ERROR);
+                                err.setContentText("Render failed: " + message);
+                                err.show();
+                            });
+                        }
+                    });
             return;
         }
 
         // Photo-synthesis mode: build a slideshow-style MP4 using JavaCV directly
+        ProgressIndicator photoPi = new ProgressIndicator(0);
+        photoPi.setPrefSize(80, 80);
+        javafx.scene.layout.VBox photoContent = new javafx.scene.layout.VBox(15, new javafx.scene.control.Label("Exporting your photos, please wait..."), photoPi);
+        photoContent.setAlignment(javafx.geometry.Pos.CENTER);
+        photoContent.setPadding(new javafx.geometry.Insets(20));
+
+        Alert photoProgressAlert = new Alert(Alert.AlertType.NONE);
+        photoProgressAlert.setTitle("Rendering Photo Synthesis");
+        photoProgressAlert.getDialogPane().setContent(photoContent);
+        photoProgressAlert.getDialogPane().setPrefSize(350, 200);
+        photoProgressAlert.show();
+
         new Thread(() -> {
             try {
                 if (videoPhotos.isEmpty()) {
                     javafx.application.Platform.runLater(() -> {
+                        photoProgressAlert.close();
                         Alert a = new Alert(Alert.AlertType.WARNING);
                         a.setContentText("No photos to synthesize.");
                         a.show();
@@ -1120,8 +1473,10 @@ public class VideoController {
                 BufferedImage sample = ImageIO.read(first);
                 int width = sample.getWidth();
                 int height = sample.getHeight();
-                if (width % 2 != 0) width--;
-                if (height % 2 != 0) height--;
+                if (width % 2 != 0)
+                    width--;
+                if (height % 2 != 0)
+                    height--;
 
                 double frameRate = 30.0;
                 Java2DFrameConverter converter = new Java2DFrameConverter();
@@ -1133,14 +1488,22 @@ public class VideoController {
                 recorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
                 recorder.start();
 
-                // capture overlay settings from JavaFX thread
+                // Capture overlay settings on JavaFX thread before handing off to render thread
                 final String overlayText = videoOverlayText != null ? videoOverlayText.getText() : "";
                 final double tx = videoOverlayLabel != null ? videoOverlayLabel.getTranslateX() : 0;
                 final double ty = videoOverlayLabel != null ? videoOverlayLabel.getTranslateY() : 0;
                 final double op = videoOverlayLabel != null ? videoOverlayLabel.getOpacity() : 1.0;
-                final javafx.scene.paint.Color fxColor = videoOverlayLabel != null && videoOverlayLabel.getTextFill() instanceof javafx.scene.paint.Color
-                        ? (javafx.scene.paint.Color) videoOverlayLabel.getTextFill() : javafx.scene.paint.Color.WHITE;
-                final java.awt.Color awtColor = new java.awt.Color((float) fxColor.getRed(), (float) fxColor.getGreen(), (float) fxColor.getBlue(), (float) fxColor.getOpacity());
+                final javafx.scene.paint.Color fxColor = videoOverlayLabel != null
+                        && videoOverlayLabel.getTextFill() instanceof javafx.scene.paint.Color
+                                ? (javafx.scene.paint.Color) videoOverlayLabel.getTextFill()
+                                : javafx.scene.paint.Color.WHITE;
+                final java.awt.Color awtColor = new java.awt.Color((float) fxColor.getRed(),
+                        (float) fxColor.getGreen(), (float) fxColor.getBlue(), (float) fxColor.getOpacity());
+                // Display dimensions used for coordinate mapping (same as preview)
+                final double dispW = storedFitWidth  > 0 ? storedFitWidth  : 800.0;
+                final double dispH = storedFitHeight > 0 ? storedFitHeight : 500.0;
+                final String graphicEffect = videoGraphicsCombo != null ? videoGraphicsCombo.getValue() : "None";
+                final String fontName = videoFontCombo != null && videoFontCombo.getValue() != null ? videoFontCombo.getValue() : "SansSerif";
 
                 for (int idx = 0; idx < videoPhotos.size(); idx++) {
                     File f = new File(videoPhotos.get(idx));
@@ -1148,27 +1511,167 @@ public class VideoController {
                     if (img.getWidth() != width || img.getHeight() != height) {
                         BufferedImage tmp = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
                         Graphics2D g = tmp.createGraphics();
+                        g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
+                                java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
                         g.drawImage(img, 0, 0, width, height, null);
                         g.dispose();
                         img = tmp;
                     }
 
-                    // apply overlay onto a copy
-                    BufferedImage framed = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_3BYTE_BGR);
-                    Graphics2D g = framed.createGraphics();
-                    g.drawImage(img, 0, 0, null);
-                    g.setColor(awtColor);
-                    g.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, (float) op));
-                    g.setFont(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 48));
-                    int x = (int) ((width / 2.0) + tx * (width / 800.0));
-                    int y = (int) ((height / 2.0) + ty * (height / 400.0));
-                    if (overlayText != null && !overlayText.isBlank()) {
-                        g.drawString(overlayText, x, y);
-                    }
-                    g.dispose();
-
                     int frames = (int) Math.max(1, Math.round(photoDurations.get(idx) * frameRate));
                     for (int fidx = 0; fidx < frames; fidx++) {
+                        // Build a fresh frame so per-frame effects can vary
+                        BufferedImage framed = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+                        Graphics2D g = framed.createGraphics();
+                        g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
+                                java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                        g.drawImage(img, 0, 0, null);
+
+                        double progress = (double) fidx / Math.max(1, frames - 1); // 0.0 → 1.0
+                        double overallProgress = (idx + ((double) fidx / frames)) / videoPhotos.size();
+                        if (fidx % 5 == 0) {
+                            javafx.application.Platform.runLater(() -> photoPi.setProgress(overallProgress));
+                        }
+
+                        // ── Graphic overlay ──────────────────────────────────────────
+                        if (graphicEffect != null) {
+                            switch (graphicEffect) {
+                                case "Classic Vignette": {
+                                    java.awt.RadialGradientPaint vignette = new java.awt.RadialGradientPaint(
+                                        width / 2f, height / 2f,
+                                        Math.max(width, height) * 0.7f,
+                                        new float[]{0f, 1f},
+                                        new java.awt.Color[]{new java.awt.Color(0,0,0,0), new java.awt.Color(0,0,0,180)});
+                                    g.setPaint(vignette);
+                                    g.fillRect(0, 0, width, height);
+                                    break;
+                                }
+                                case "Golden Borders": {
+                                    int bw = Math.max(10, width / 60);
+                                    // Shimmer: alpha pulses with sin wave
+                                    float shimmer = (float)(0.7 + 0.3 * Math.sin(progress * Math.PI * 6));
+                                    g.setColor(new java.awt.Color(1f, 0.84f, 0f, shimmer));
+                                    g.setStroke(new java.awt.BasicStroke(bw));
+                                    g.drawRect(bw/2, bw/2, width - bw, height - bw);
+                                    break;
+                                }
+                                case "White Borders": {
+                                    int bw = Math.max(10, width / 60);
+                                    g.setColor(new java.awt.Color(255, 255, 255, 220));
+                                    g.setStroke(new java.awt.BasicStroke(bw));
+                                    g.drawRect(bw/2, bw/2, width - bw, height - bw);
+                                    break;
+                                }
+                                case "Retro Film": {
+                                    // Sepia tint
+                                    g.setComposite(java.awt.AlphaComposite.getInstance(
+                                            java.awt.AlphaComposite.SRC_OVER, 0.15f));
+                                    g.setColor(new java.awt.Color(180, 120, 40));
+                                    g.fillRect(0, 0, width, height);
+                                    // Animated scanline
+                                    g.setComposite(java.awt.AlphaComposite.getInstance(
+                                            java.awt.AlphaComposite.SRC_OVER, 0.25f));
+                                    int lineY = (int)((progress * height * 2) % height);
+                                    g.setColor(java.awt.Color.WHITE);
+                                    g.setStroke(new java.awt.BasicStroke(2));
+                                    g.drawLine(0, lineY, width, lineY);
+                                    g.setComposite(java.awt.AlphaComposite.getInstance(
+                                            java.awt.AlphaComposite.SRC_OVER, 1f));
+                                    break;
+                                }
+                                case "Floating Hearts": {
+                                    // 8 hearts at deterministic positions that float upward over the frame
+                                    for (int h = 0; h < 8; h++) {
+                                        double seed = h * 137.508; // golden angle spread
+                                        double baseX = (Math.sin(seed) * 0.5 + 0.5) * width;
+                                        double baseY = (1.0 - ((progress + h * 0.12) % 1.0)) * (height + 40) - 20;
+                                        float alpha = (float) Math.min(1.0, Math.sin(((progress + h * 0.12) % 1.0) * Math.PI));
+                                        g.setComposite(java.awt.AlphaComposite.getInstance(
+                                                java.awt.AlphaComposite.SRC_OVER, alpha));
+                                        g.setFont(new java.awt.Font("Segoe UI Emoji", java.awt.Font.PLAIN,
+                                                (int)(height * 0.06)));
+                                        g.setColor(new java.awt.Color(255, 80, 100));
+                                        g.drawString("\u2665", (int) baseX, (int) baseY);
+                                    }
+                                    g.setComposite(java.awt.AlphaComposite.getInstance(
+                                            java.awt.AlphaComposite.SRC_OVER, 1f));
+                                    break;
+                                }
+                                case "Starfield": {
+                                    // Twinkling stars: opacity alternates per star
+                                    java.util.Random rnd = new java.util.Random(42);
+                                    for (int s = 0; s < 20; s++) {
+                                        double sx = rnd.nextDouble() * width;
+                                        double sy = rnd.nextDouble() * height;
+                                        double r  = 3 + rnd.nextDouble() * 5;
+                                        float alpha = (float)(0.4 + 0.6 * Math.abs(
+                                                Math.sin(progress * Math.PI * 4 + s)));
+                                        g.setComposite(java.awt.AlphaComposite.getInstance(
+                                                java.awt.AlphaComposite.SRC_OVER, alpha));
+                                        g.setColor(new java.awt.Color(255, 240, 100));
+                                        g.fillOval((int)(sx - r), (int)(sy - r), (int)(r*2), (int)(r*2));
+                                        // Cross flare
+                                        g.setStroke(new java.awt.BasicStroke(1.5f));
+                                        g.drawLine((int)(sx - r*2), (int)sy, (int)(sx + r*2), (int)sy);
+                                        g.drawLine((int)sx, (int)(sy - r*2), (int)sx, (int)(sy + r*2));
+                                    }
+                                    g.setComposite(java.awt.AlphaComposite.getInstance(
+                                            java.awt.AlphaComposite.SRC_OVER, 1f));
+                                    break;
+                                }
+                                case "Confetti Rain": {
+                                    // Confetti pieces fall from top to bottom
+                                    java.awt.Color[] confettiColors = {
+                                        new java.awt.Color(255, 80, 80),  new java.awt.Color(80, 200, 120),
+                                        new java.awt.Color(80, 140, 255), new java.awt.Color(255, 200, 0),
+                                        new java.awt.Color(200, 80, 255)
+                                    };
+                                    java.util.Random rnd2 = new java.util.Random(123);
+                                    for (int c = 0; c < 18; c++) {
+                                        double cx = rnd2.nextDouble() * width;
+                                        double fallY = ((progress + c * 0.055) % 1.0) * (height + 30) - 15;
+                                        double rot   = progress * Math.PI * 6 + c * 0.9;
+                                        java.awt.Color cc = confettiColors[c % confettiColors.length];
+                                        g.setComposite(java.awt.AlphaComposite.getInstance(
+                                                java.awt.AlphaComposite.SRC_OVER, 0.85f));
+                                        g.setColor(cc);
+                                        java.awt.geom.AffineTransform at = g.getTransform();
+                                        g.translate(cx, fallY);
+                                        g.rotate(rot);
+                                        int pw = (int)(width * 0.018), ph = (int)(height * 0.012);
+                                        g.fillRect(-pw/2, -ph/2, pw, ph);
+                                        g.setTransform(at);
+                                    }
+                                    g.setComposite(java.awt.AlphaComposite.getInstance(
+                                            java.awt.AlphaComposite.SRC_OVER, 1f));
+                                    break;
+                                }
+                            }
+                        }
+
+                        // ── Text overlay (correctly centred) ─────────────────────────
+                        if (overlayText != null && !overlayText.isBlank()) {
+                            // Scale font relative to how the preview scales to full image
+                            double userFontSize = videoFontSizeSlider != null ? videoFontSizeSlider.getValue() : 48;
+                            int fontSize = (int) Math.max(12, userFontSize * (width / dispW));
+                            g.setFont(new java.awt.Font(fontName, java.awt.Font.BOLD, fontSize));
+                            g.setColor(awtColor);
+                            g.setComposite(java.awt.AlphaComposite.getInstance(
+                                    java.awt.AlphaComposite.SRC_OVER, (float) op));
+                            java.awt.FontMetrics fm = g.getFontMetrics();
+                            int textW = fm.stringWidth(overlayText);
+                            int textH = fm.getAscent();
+                            // Map slider offset (display-space pixels) to image-space pixels, then centre
+                            int drawX = (int)((width  / 2.0) + tx * (width  / dispW) - textW / 2.0);
+                            int drawY = (int)((height / 2.0) + ty * (height / dispH) + textH / 2.0);
+                            // Drop-shadow for readability
+                            g.setColor(new java.awt.Color(0, 0, 0, 140));
+                            g.drawString(overlayText, drawX + 2, drawY + 2);
+                            g.setColor(awtColor);
+                            g.drawString(overlayText, drawX, drawY);
+                        }
+
+                        g.dispose();
                         recorder.record(converter.convert(framed));
                     }
                 }
@@ -1178,13 +1681,16 @@ public class VideoController {
 
                 // copy to gallery and refresh
                 File galleryDir = new File("Edited_Gallery");
-                if (!galleryDir.exists()) galleryDir.mkdirs();
+                if (!galleryDir.exists())
+                    galleryDir.mkdirs();
                 File dest = new File(galleryDir, renderTarget.getName());
                 Files.copy(renderTarget.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 javafx.application.Platform.runLater(() -> {
+                    photoProgressAlert.close();
                     try {
                         MainController.getInstance().updateSavedMediaStateExternal(dest);
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                     Alert done = new Alert(Alert.AlertType.INFORMATION);
                     done.setContentText("Synthesis complete: " + dest.getAbsolutePath());
                     done.show();
@@ -1193,6 +1699,7 @@ public class VideoController {
             } catch (Exception e) {
                 e.printStackTrace();
                 javafx.application.Platform.runLater(() -> {
+                    photoProgressAlert.close();
                     Alert err = new Alert(Alert.AlertType.ERROR);
                     err.setContentText("Synthesis failed: " + e.getMessage());
                     err.show();

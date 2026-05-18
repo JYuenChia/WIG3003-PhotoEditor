@@ -86,6 +86,11 @@ public class VideoRenderer {
                     String colorStr = "#FFFFFF";
                     double tx = 0, ty = 0, op = 1.0;
                     
+                    String fontName = "SansSerif";
+                    double fontSize = 48;
+                    double dispW = previewStack.getWidth() > 0 ? previewStack.getWidth() : 800;
+                    double dispH = previewStack.getHeight() > 0 ? previewStack.getHeight() : 500;
+                    
                     // Look for the overlay label
                     for (javafx.scene.Node node : previewStack.getChildren()) {
                         if (node instanceof javafx.scene.control.Label && !"▶".equals(((javafx.scene.control.Label)node).getText())) {
@@ -94,6 +99,10 @@ public class VideoRenderer {
                             op = lbl.getOpacity();
                             tx = lbl.getTranslateX();
                             ty = lbl.getTranslateY();
+                            if (lbl.getFont() != null) {
+                                fontName = lbl.getFont().getFamily();
+                                fontSize = lbl.getFont().getSize();
+                            }
                             
                             // Try to extract color from style or text fill
                             if (lbl.getTextFill() instanceof javafx.scene.paint.Color) {
@@ -103,7 +112,7 @@ public class VideoRenderer {
                             }
                         }
                     }
-                    uiDataFuture.complete(new OverlayData(text, colorStr, tx, ty, op));
+                    uiDataFuture.complete(new OverlayData(text, colorStr, fontName, fontSize, tx, ty, op, dispW, dispH));
                 });
 
                 OverlayData ui = uiDataFuture.get();
@@ -120,16 +129,20 @@ public class VideoRenderer {
                         
                         // Apply Text Overlay if it exists
                         if (ui.text != null && !ui.text.isEmpty()) {
-                            G.setFont(new Font("Arial", Font.ITALIC, 40)); // Upscaled font for video
+                            int scaledFontSize = (int) Math.max(12, ui.fontSize * (width / ui.dispW));
+                            G.setFont(new Font(ui.fontName, Font.BOLD, scaledFontSize));
                             Color c = Color.decode(ui.textColor);
                             G.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), (int)(ui.opacity * 255)));
                             
-                            // Map JavaFX translate coordinates to video coordinates
-                            // (Simplistic mapping: assuming center alignment in UI)
-                            double x = (width / 2.0) + ui.x * (width / 800.0);
-                            double y = (height / 2.0) + ui.y * (height / 400.0);
+                            FontMetrics fm = G.getFontMetrics();
+                            int textW = fm.stringWidth(ui.text);
+                            int textH = fm.getAscent();
                             
-                            G.drawString(ui.text, (int)x, (int)y);
+                            // Map JavaFX translate coordinates to video coordinates and centre
+                            int drawX = (int)((width  / 2.0) + ui.x * (width  / ui.dispW) - textW / 2.0);
+                            int drawY = (int)((height / 2.0) + ui.y * (height / ui.dispH) + textH / 2.0);
+                            
+                            G.drawString(ui.text, drawX, drawY);
                         }
                         
                         G.dispose();
@@ -167,10 +180,11 @@ public class VideoRenderer {
     }
 
     private static class OverlayData {
-        String text, textColor;
-        double x, y, opacity;
-        OverlayData(String text, String textColor, double x, double y, double opacity) {
-            this.text = text; this.textColor = textColor; this.x = x; this.y = y; this.opacity = opacity;
+        String text, textColor, fontName;
+        double fontSize, x, y, opacity, dispW, dispH;
+        OverlayData(String text, String textColor, String fontName, double fontSize, double x, double y, double opacity, double dispW, double dispH) {
+            this.text = text; this.textColor = textColor; this.fontName = fontName; this.fontSize = fontSize;
+            this.x = x; this.y = y; this.opacity = opacity; this.dispW = dispW; this.dispH = dispH;
         }
     }
 }

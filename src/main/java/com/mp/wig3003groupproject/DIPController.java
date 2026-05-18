@@ -48,7 +48,7 @@ public class DIPController {
             if (transparencyLabel != null) transparencyLabel.setText(Math.round(v.doubleValue() * 100) + "%");
             applyDIP();
         });
-        
+
         brightnessSlider.setOnMousePressed(e -> saveState());
         contrastSlider.setOnMousePressed(e -> saveState());
         transparencySlider.setOnMousePressed(e -> saveState());
@@ -89,9 +89,7 @@ public class DIPController {
 
     private Image resolveSourceImage() {
         if (currentBaseImage != null) return currentBaseImage;
-        if (MainController.getInstance() != null && MainController.getInstance().getImageView() != null) {
-            return MainController.getInstance().getImageView().getImage();
-        }
+        if (originalImage != null) return originalImage;
         return null;
     }
 
@@ -122,26 +120,36 @@ public class DIPController {
         }
     }
 
+    public void reset() {
+        if (originalImage != null) {
+            MainController.getInstance().getImageView().setImage(originalImage);
+            MainController.getInstance().setCurrentDisplayedImage(originalImage);
+            this.currentBaseImage = originalImage;
+            undoStack.clear();
+            redoStack.clear();
+            clearUI();
+        }
+    }
+
     @FXML public void handleShareWhatsApp() { MainController.getInstance().handleShareWhatsApp(); }
     @FXML public void handleShareEmail() { MainController.getInstance().handleShareEmail(); }
 
-    // Completely resets the UI sliders/buttons back to their defaults
     public void clearUI() {
         brightnessSlider.setValue(0);
         contrastSlider.setValue(0);
         transparencySlider.setValue(1.0);
         isGrayscale = false;
         isBorderActive = false;
-        
+
         grayscaleBtn.setText("Apply Grayscale");
         grayscaleBtn.setStyle("-fx-background-color: #EEF2FF; -fx-text-fill: #4F5BD5; -fx-font-weight: bold; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 10; -fx-cursor: hand;");
-        
+
         borderToggleBtn.setText("Enable Border");
         borderControlsBox.setDisable(true);
         borderControlsBox.setOpacity(0.4);
         selectionToggle.setSelected(false);
         downloadContainer.setVisible(false);
-        
+
         customColorPicker.setValue(Color.WHITE);
         patternCombo.setValue("Solid");
         borderThicknessSlider.setValue(25);
@@ -179,7 +187,7 @@ public class DIPController {
         if (originalImage == null) return;
         saveState();
         clearUI();
-        downloadContainer.setVisible(true); // Keep visible since image is still loaded
+        downloadContainer.setVisible(true);
         currentBaseImage = originalImage;
         MainController.getInstance().getImageView().setImage(originalImage);
         MainController.getInstance().setCurrentDisplayedImage(originalImage);
@@ -190,8 +198,6 @@ public class DIPController {
         ImageView view = MainController.getInstance().getImageView();
         Image sourceImage = resolveSourceImage();
         if (view == null || sourceImage == null) return;
-
-        currentBaseImage = sourceImage;
 
         double b = brightnessSlider.getValue(), c = contrastSlider.getValue() + 1.0;
         double alpha = transparencySlider.getValue();
@@ -243,11 +249,14 @@ public class DIPController {
 
     public void selectSimilarColors(double x, double y) {
         saveState();
-        Image source = MainController.getInstance().getImageView().getImage();
+        Image source = resolveSourceImage();
+        if (source == null) return;
+
         PixelReader reader = source.getPixelReader();
         Color target = reader.getColor((int)x, (int)y);
         WritableImage wImg = new WritableImage((int)source.getWidth(), (int)source.getHeight());
         PixelWriter writer = wImg.getPixelWriter();
+
         for (int row = 0; row < source.getHeight(); row++) {
             for (int col = 0; col < source.getWidth(); col++) {
                 Color pix = reader.getColor(col, row);
@@ -260,47 +269,45 @@ public class DIPController {
         MainController.getInstance().setCurrentDisplayedImage(wImg);
     }
 
-    @FXML public void handleResize() { 
+    @FXML public void handleResize() {
         saveState();
-        try { 
-            currentBaseImage = new WritableImage(originalImage.getPixelReader(), Integer.parseInt(widthField.getText()), Integer.parseInt(heightField.getText())); 
-            applyDIP(); 
-        } catch (Exception e) {} 
+        try {
+            Image source = resolveSourceImage();
+            if (source == null) return;
+            currentBaseImage = new WritableImage(source.getPixelReader(), Integer.parseInt(widthField.getText()), Integer.parseInt(heightField.getText()));
+            applyDIP();
+        } catch (Exception e) {}
     }
-    
-    // UPDATED: True Pixel Matrix Rotation (fixes the save bug)
-    @FXML public void handleRotate() { 
+
+    @FXML public void handleRotate() {
         saveState();
-        if (currentBaseImage == null) return;
-        
-        int w = (int) currentBaseImage.getWidth();
-        int h = (int) currentBaseImage.getHeight();
-        
-        // Swap dimensions for 90 degree turn
+        Image source = resolveSourceImage();
+        if (source == null) return;
+
+        int w = (int) source.getWidth();
+        int h = (int) source.getHeight();
+
         WritableImage rotatedImage = new WritableImage(h, w);
-        PixelReader pr = currentBaseImage.getPixelReader();
+        PixelReader pr = source.getPixelReader();
         PixelWriter pw = rotatedImage.getPixelWriter();
-        
-        // Mathematically map the pixels 90 degrees clockwise
+
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
                 pw.setColor(h - 1 - y, x, pr.getColor(x, y));
             }
         }
-        
-        // Replace the base image with the properly rotated pixel data
+
         currentBaseImage = rotatedImage;
-        originalImage = rotatedImage; 
-        
+        if (originalImage == source) originalImage = rotatedImage;
+
         widthField.setText(String.valueOf(h));
         heightField.setText(String.valueOf(w));
-        
-        // Re-apply any currently active filters (like grayscale/borders) to the new rotated base
-        applyDIP(); 
+
+        applyDIP();
     }
-    
+
     public boolean isSelectionMode() { return selectionToggle.isSelected(); }
-    
+
     @FXML public void handleSaveAction() {
         ImageView v = MainController.getInstance().getImageView();
         FileChooser fc = new FileChooser(); fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG", "*.png"));

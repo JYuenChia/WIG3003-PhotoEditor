@@ -245,7 +245,7 @@ public class VideoController {
                 border.setPrefSize(cw, ch);
                 border.setMaxSize(cw, ch);
                 // Static border, matching size exactly
-                border.setStyle("-fx-border-color: linear-gradient(to bottom right, #FFD700, #FFA500, #FFD700); -fx-border-width: 12; -fx-border-radius: 4;");
+                border.setStyle("-fx-border-color: linear-gradient(to bottom right, #FFD700, #FFA500, #FFD700); -fx-border-width: 12; -fx-border-style: solid inside;");
                 videoPreviewStack.getChildren().add(border);
                 break;
             }
@@ -254,7 +254,7 @@ public class VideoController {
                 border.setMouseTransparent(true);
                 border.setPrefSize(cw, ch);
                 border.setMaxSize(cw, ch);
-                border.setStyle("-fx-border-color: white; -fx-border-width: 12; -fx-border-radius: 4;");
+                border.setStyle("-fx-border-color: white; -fx-border-width: 12; -fx-border-style: solid inside;");
                 videoPreviewStack.getChildren().add(border);
                 break;
             }
@@ -1398,6 +1398,8 @@ public class VideoController {
             progressAlert.setTitle("Rendering Video");
             progressAlert.getDialogPane().setContent(content);
             progressAlert.getDialogPane().setPrefSize(350, 200);
+            progressAlert.getDialogPane().getButtonTypes().add(javafx.scene.control.ButtonType.OK);
+            progressAlert.getDialogPane().lookupButton(javafx.scene.control.ButtonType.OK).setVisible(false);
             progressAlert.show();
 
             VideoRenderer.renderVideoWithOverlays(source, outFile, videoPreviewStack, mediaPlayer, startSec,
@@ -1411,6 +1413,7 @@ public class VideoController {
                         @Override
                         public void onComplete(File out) {
                             javafx.application.Platform.runLater(() -> {
+                                progressAlert.setResult(javafx.scene.control.ButtonType.OK);
                                 progressAlert.close();
                                 try {
                                     // copy to Edited_Gallery and refresh main list via MainController helper
@@ -1434,6 +1437,7 @@ public class VideoController {
                         @Override
                         public void onError(String message) {
                             javafx.application.Platform.runLater(() -> {
+                                progressAlert.setResult(javafx.scene.control.ButtonType.OK);
                                 progressAlert.close();
                                 Alert err = new Alert(Alert.AlertType.ERROR);
                                 err.setContentText("Render failed: " + message);
@@ -1455,12 +1459,32 @@ public class VideoController {
         photoProgressAlert.setTitle("Rendering Photo Synthesis");
         photoProgressAlert.getDialogPane().setContent(photoContent);
         photoProgressAlert.getDialogPane().setPrefSize(350, 200);
+        photoProgressAlert.getDialogPane().getButtonTypes().add(javafx.scene.control.ButtonType.OK);
+        photoProgressAlert.getDialogPane().lookupButton(javafx.scene.control.ButtonType.OK).setVisible(false);
         photoProgressAlert.show();
+
+        // Capture overlay settings on JavaFX thread before handing off to render thread
+        final String overlayText = videoOverlayText != null ? videoOverlayText.getText() : "";
+        final double tx = videoOverlayLabel != null ? videoOverlayLabel.getTranslateX() : 0;
+        final double ty = videoOverlayLabel != null ? videoOverlayLabel.getTranslateY() : 0;
+        final double op = videoOverlayLabel != null ? videoOverlayLabel.getOpacity() : 1.0;
+        final javafx.scene.paint.Color fxColor = videoOverlayLabel != null
+                && videoOverlayLabel.getTextFill() instanceof javafx.scene.paint.Color
+                        ? (javafx.scene.paint.Color) videoOverlayLabel.getTextFill()
+                        : javafx.scene.paint.Color.WHITE;
+        final java.awt.Color awtColor = new java.awt.Color((float) fxColor.getRed(),
+                (float) fxColor.getGreen(), (float) fxColor.getBlue(), (float) fxColor.getOpacity());
+        // Display dimensions used for coordinate mapping (same as preview)
+        final double dispW = storedFitWidth  > 0 ? storedFitWidth  : 800.0;
+        final double dispH = storedFitHeight > 0 ? storedFitHeight : 500.0;
+        final String graphicEffect = videoGraphicsCombo != null ? videoGraphicsCombo.getValue() : "None";
+        final String fontName = videoFontCombo != null && videoFontCombo.getValue() != null ? videoFontCombo.getValue() : "SansSerif";
 
         new Thread(() -> {
             try {
                 if (videoPhotos.isEmpty()) {
                     javafx.application.Platform.runLater(() -> {
+                        photoProgressAlert.setResult(javafx.scene.control.ButtonType.OK);
                         photoProgressAlert.close();
                         Alert a = new Alert(Alert.AlertType.WARNING);
                         a.setContentText("No photos to synthesize.");
@@ -1487,23 +1511,6 @@ public class VideoController {
                 recorder.setVideoBitrate(2000000);
                 recorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
                 recorder.start();
-
-                // Capture overlay settings on JavaFX thread before handing off to render thread
-                final String overlayText = videoOverlayText != null ? videoOverlayText.getText() : "";
-                final double tx = videoOverlayLabel != null ? videoOverlayLabel.getTranslateX() : 0;
-                final double ty = videoOverlayLabel != null ? videoOverlayLabel.getTranslateY() : 0;
-                final double op = videoOverlayLabel != null ? videoOverlayLabel.getOpacity() : 1.0;
-                final javafx.scene.paint.Color fxColor = videoOverlayLabel != null
-                        && videoOverlayLabel.getTextFill() instanceof javafx.scene.paint.Color
-                                ? (javafx.scene.paint.Color) videoOverlayLabel.getTextFill()
-                                : javafx.scene.paint.Color.WHITE;
-                final java.awt.Color awtColor = new java.awt.Color((float) fxColor.getRed(),
-                        (float) fxColor.getGreen(), (float) fxColor.getBlue(), (float) fxColor.getOpacity());
-                // Display dimensions used for coordinate mapping (same as preview)
-                final double dispW = storedFitWidth  > 0 ? storedFitWidth  : 800.0;
-                final double dispH = storedFitHeight > 0 ? storedFitHeight : 500.0;
-                final String graphicEffect = videoGraphicsCombo != null ? videoGraphicsCombo.getValue() : "None";
-                final String fontName = videoFontCombo != null && videoFontCombo.getValue() != null ? videoFontCombo.getValue() : "SansSerif";
 
                 for (int idx = 0; idx < videoPhotos.size(); idx++) {
                     File f = new File(videoPhotos.get(idx));
@@ -1686,6 +1693,7 @@ public class VideoController {
                 File dest = new File(galleryDir, renderTarget.getName());
                 Files.copy(renderTarget.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 javafx.application.Platform.runLater(() -> {
+                    photoProgressAlert.setResult(javafx.scene.control.ButtonType.OK);
                     photoProgressAlert.close();
                     try {
                         MainController.getInstance().updateSavedMediaStateExternal(dest);
@@ -1699,6 +1707,7 @@ public class VideoController {
             } catch (Exception e) {
                 e.printStackTrace();
                 javafx.application.Platform.runLater(() -> {
+                    photoProgressAlert.setResult(javafx.scene.control.ButtonType.OK);
                     photoProgressAlert.close();
                     Alert err = new Alert(Alert.AlertType.ERROR);
                     err.setContentText("Synthesis failed: " + e.getMessage());

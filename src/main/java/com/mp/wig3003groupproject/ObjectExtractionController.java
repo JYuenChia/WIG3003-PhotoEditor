@@ -172,7 +172,7 @@ public class ObjectExtractionController {
                     if (outputMode.equals("Extract Only")) {
                         pw.setColor(x, y, new Color(0, 0, 0, 0)); // Transparent
                     } else if (outputMode.equals("Extract with Background")) {
-                        pw.setColor(x, y, pixelColor.deriveColor(0, 1, 1, alpha));
+                        pw.setColor(x, y, new Color(1.0, 1.0, 1.0, alpha)); // White background
                     } else { // Color Mask
                         pw.setColor(x, y, new Color(0, 0, 0, 0)); // Transparent
                     }

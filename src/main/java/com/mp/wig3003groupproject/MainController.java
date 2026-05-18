@@ -809,7 +809,7 @@ public class MainController {
             StackPane imgStack = new StackPane();
             Node preview = buildGalleryPreview(f);
             if (annotationsDB.containsKey(hash)) {
-                Label h = new Label("");
+                Label h = new Label("♥");
                 h.setStyle("-fx-text-fill: #F38BA8; -fx-font-size: 18;");
                 StackPane.setAlignment(h, Pos.TOP_RIGHT);
                 imgStack.getChildren().addAll(preview, h);

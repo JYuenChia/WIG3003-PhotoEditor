@@ -8,10 +8,11 @@
 <HBox xmlns:fx="http://javafx.com/fxml"
       fx:id="videoCreatorPane"
       fx:controller="com.mp.wig3003groupproject.VideoController"
-      style="-fx-background-color: #F7F8FA;">
+      style="-fx-background-color: #F7F8FA;"
+      minWidth="0">
     
     <!-- Center Workspace (Left) -->
-    <StackPane HBox.hgrow="ALWAYS" style="-fx-padding: 15;">
+    <StackPane HBox.hgrow="ALWAYS" style="-fx-padding: 15;" fx:id="videoCenterPane">
         <VBox fx:id="videoDropZone" alignment="CENTER" spacing="25" 
               style="-fx-background-color: #FFFFFF; -fx-background-radius: 20; -fx-border-color: #D8DEFF; -fx-border-width: 2; -fx-border-style: dashed; -fx-border-radius: 20;">
             <Label text="⏵" style="-fx-font-size: 56; -fx-text-fill: #4F5BD5; -fx-padding: 0 0 0 5;"/>
@@ -46,11 +47,11 @@
         </VBox>
 
         <!-- Preview Player (Initially Hidden) -->
-        <VBox fx:id="videoPlayerContainer" visible="false" spacing="15" alignment="CENTER">
-            <StackPane fx:id="videoPreviewStack" style="-fx-background-color: black; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 5);">
-                <ImageView fx:id="videoPreviewImage" preserveRatio="true" fitWidth="600" fitHeight="340"/>
-                <javafx.scene.media.MediaView fx:id="videoMediaView" fitWidth="600" fitHeight="340" preserveRatio="true" visible="false" managed="false"/>
-                <Label fx:id="videoOverlayLabel" text="" wrapText="true" alignment="CENTER" textAlignment="CENTER"
+        <VBox fx:id="videoPlayerContainer" visible="false" spacing="15" alignment="CENTER" minWidth="0">
+            <StackPane fx:id="videoPreviewStack" alignment="CENTER" style="-fx-background-color: transparent;">
+                <ImageView fx:id="videoPreviewImage" preserveRatio="true"/>
+                <javafx.scene.media.MediaView fx:id="videoMediaView" preserveRatio="true" visible="false" managed="false"/>
+                <Label fx:id="videoOverlayLabel" text="" wrapText="true" alignment="CENTER" textAlignment="CENTER" mouseTransparent="true"
                        style="-fx-text-fill: white; -fx-font-size: 20; -fx-padding: 15; -fx-font-family: 'Georgia'; -fx-font-style: italic;"/>
             </StackPane>
 
@@ -67,6 +68,13 @@
                 </HBox>
             </VBox>
         </VBox>
+
+        <!-- Back-to-Upload button: shown only after media is loaded -->
+        <Button fx:id="btnBackToUpload" text="← Re-upload" onAction="#handleBackToUpload"
+                visible="false" managed="false"
+                StackPane.alignment="TOP_LEFT"
+                style="-fx-background-color: rgba(255,255,255,0.92); -fx-text-fill: #4F5BD5; -fx-font-size: 12; -fx-font-weight: bold; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-background-radius: 20; -fx-border-color: #D8DEFF; -fx-border-width: 1.5; -fx-border-radius: 20; -fx-padding: 6 16; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(79,91,213,0.18), 8, 0, 0, 2);"
+                translateX="25" translateY="25"/>
     </StackPane>
 
     <!-- Functional Panel (Right) -->
@@ -75,6 +83,9 @@
         
         <HBox alignment="CENTER_LEFT" spacing="10">
             <Label text="🎬 Video Lab" style="-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+            <Region HBox.hgrow="ALWAYS" />
+            <Button text="Reset" onAction="#handleResetAll"
+                    style="-fx-background-color: #9DCCFF; -fx-text-fill: #4A4A4A; -fx-background-radius: 10; -fx-font-size: 11; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-border-color: #E5E0F8; -fx-border-radius: 10; -fx-cursor: hand;"/>
         </HBox>
 
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent;">
@@ -124,6 +135,11 @@
                         </VBox>
                         
                         <VBox spacing="5">
+                            <Label text="Font Size" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
+                            <Slider fx:id="videoFontSizeSlider" min="10" max="100" value="48" style="-fx-cursor: hand;"/>
+                        </VBox>
+                        
+                        <VBox spacing="5">
                             <Label text="Text Color" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #4A4A4A;"/>
                             <ColorPicker fx:id="videoTextColorPicker" maxWidth="Infinity" style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #E2E8F0; -fx-border-radius: 8;"/>
                         </VBox>
@@ -152,9 +168,9 @@
                         <items>
                             <FXCollections fx:factory="observableArrayList">
                                 <String fx:value="None" />
-                                <String fx:value="Heart Stickers" />
-                                <String fx:value="Star Explosion" />
-                                <String fx:value="Birthday Party" />
+                                <String fx:value="Floating Hearts" />
+                                <String fx:value="Starfield" />
+                                <String fx:value="Confetti Rain" />
                                 <String fx:value="Retro Film" />
                                 <String fx:value="Classic Vignette" />
                                 <String fx:value="Golden Borders" />

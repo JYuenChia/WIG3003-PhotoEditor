@@ -8,7 +8,8 @@
 <HBox xmlns:fx="http://javafx.com/fxml"
       fx:id="videoCreatorPane"
       fx:controller="com.mp.wig3003groupproject.VideoController"
-      style="-fx-background-color: #F7F8FA;">
+      style="-fx-background-color: #F7F8FA;"
+      minWidth="0">
     
     <!-- Center Workspace (Left) -->
     <StackPane HBox.hgrow="ALWAYS" style="-fx-padding: 15;">
@@ -46,11 +47,11 @@
         </VBox>
 
         <!-- Preview Player (Initially Hidden) -->
-        <VBox fx:id="videoPlayerContainer" visible="false" spacing="15" alignment="CENTER">
-            <StackPane fx:id="videoPreviewStack" style="-fx-background-color: black; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 5);">
-                <ImageView fx:id="videoPreviewImage" preserveRatio="true" fitWidth="600" fitHeight="340"/>
-                <javafx.scene.media.MediaView fx:id="videoMediaView" fitWidth="600" fitHeight="340" preserveRatio="true" visible="false" managed="false"/>
-                <Label fx:id="videoOverlayLabel" text="" wrapText="true" alignment="CENTER" textAlignment="CENTER"
+        <VBox fx:id="videoPlayerContainer" visible="false" spacing="15" alignment="CENTER" minWidth="0">
+            <StackPane fx:id="videoPreviewStack" alignment="CENTER" style="-fx-background-color: transparent;">
+                <ImageView fx:id="videoPreviewImage" preserveRatio="true"/>
+                <javafx.scene.media.MediaView fx:id="videoMediaView" preserveRatio="true" visible="false" managed="false"/>
+                <Label fx:id="videoOverlayLabel" text="" wrapText="true" alignment="CENTER" textAlignment="CENTER" mouseTransparent="true"
                        style="-fx-text-fill: white; -fx-font-size: 20; -fx-padding: 15; -fx-font-family: 'Georgia'; -fx-font-style: italic;"/>
             </StackPane>
 

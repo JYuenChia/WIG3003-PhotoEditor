@@ -41,4 +41,7 @@ build/
 annotations_database.properties
 photo_editor_db.properties
 Edited_Gallery/
-email-config.properties
+gallery_db.properties
+email_configuration.example
+
+

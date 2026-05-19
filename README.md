@@ -27,6 +27,9 @@ A JavaFX-based application designed for comprehensive photo management, digital 
   - Securely share your processed media directly from the application using SMTP.
 - **Gallery Management**:
   - Built-in gallery to seamlessly save and manage processed images.
+- **Annotation & Metadata Management**:
+  - Append custom notes and descriptions to individual images.
+  - Real-time UI synchronization via visual indicators (Heart ♥ icon) in the gallery.
 
 ## Setup & Configuration
 

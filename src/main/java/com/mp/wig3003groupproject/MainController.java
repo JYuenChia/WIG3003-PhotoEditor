@@ -594,6 +594,23 @@ public class MainController {
             if (t != null) {
                 t.setStyle(t.isSelected() ? buildActiveStyle() : buildInactiveStyle());
                 t.setAlignment(sidebarExpanded ? javafx.geometry.Pos.CENTER_LEFT : javafx.geometry.Pos.CENTER);
+                
+                if (t.getGraphic() instanceof HBox) {
+                    HBox box = (HBox) t.getGraphic();
+                    for (Node child : box.getChildren()) {
+                        if (child instanceof Label) {
+                            Label l = (Label) child;
+                            String baseStyle = l.getStyle().replaceAll("-fx-text-fill:[^;]+;", "");
+                            String color;
+                            if (darkMode) {
+                                color = t.isSelected() ? "#FFFFFF" : "#8892B0"; 
+                            } else {
+                                color = t.isSelected() ? "#3730A3" : "#6B7280";
+                            }
+                            l.setStyle(baseStyle + " -fx-text-fill: " + color + ";");
+                        }
+                    }
+                }
             }
         }
     }

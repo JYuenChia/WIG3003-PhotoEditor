@@ -21,6 +21,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Slider;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
@@ -29,18 +30,17 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import javafx.util.Duration;
-import javafx.scene.control.Slider;
 
 public class MainController {
 
@@ -111,7 +111,7 @@ public class MainController {
         loadDatabase();
 
         if (imageScrollPane != null) {
-            imageScrollPane.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+            imageScrollPane.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_CLICKED, event -> {
                 if (DIPController.getInstance() != null && DIPController.getInstance().isSelectionMode()) {
                     Image currentImg = mainImageView.getImage();
                     if (currentImg == null) return;

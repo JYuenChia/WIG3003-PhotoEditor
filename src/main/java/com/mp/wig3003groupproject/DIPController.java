@@ -14,14 +14,15 @@ import java.io.File;
 import java.util.Stack;
 
 public class DIPController {
-    @FXML private Slider brightnessSlider, contrastSlider, borderThicknessSlider, borderRoundSlider;
-    @FXML private Label brightnessLabel, contrastLabel;
+    @FXML private Slider brightnessSlider, contrastSlider, borderThicknessSlider, borderRoundSlider, transparencySlider;
+    @FXML private Label brightnessLabel, contrastLabel, transparencyLabel;
     @FXML private Button grayscaleBtn, borderToggleBtn;
     @FXML private ToggleButton selectionToggle;
     @FXML private VBox borderControlsBox, downloadContainer;
     @FXML private ColorPicker customColorPicker;
     @FXML private ComboBox<String> patternCombo;
     @FXML private TextField widthField, heightField;
+    
 
     private Image originalImage, currentBaseImage;
     private Color activeBorderColor = Color.WHITE;
@@ -44,6 +45,11 @@ public class DIPController {
             contrastLabel.setText(Math.round(v.doubleValue() * 100) + "%");
             applyDIP();
         });
+        transparencySlider.valueProperty().addListener((o, old, v) -> {
+            transparencyLabel.setText(Math.round(v.doubleValue() * 100) + "%");
+            applyDIP();
+        });
+        transparencySlider.setOnMousePressed(e -> saveState());
         
         brightnessSlider.setOnMousePressed(e -> saveState());
         contrastSlider.setOnMousePressed(e -> saveState());
@@ -106,6 +112,7 @@ public class DIPController {
     public void clearUI() {
         brightnessSlider.setValue(0);
         contrastSlider.setValue(0);
+        transparencySlider.setValue(1.0);
         isGrayscale = false;
         isBorderActive = false;
         
@@ -166,6 +173,7 @@ public class DIPController {
 
         double b = brightnessSlider.getValue(), c = contrastSlider.getValue() + 1.0;
         double t = borderThicknessSlider.getValue(), r = borderRoundSlider.getValue();
+        double alpha = transparencySlider.getValue();
         String pattern = patternCombo.getValue();
 
         int w = (int)currentBaseImage.getWidth(), h = (int)currentBaseImage.getHeight();
@@ -203,7 +211,7 @@ public class DIPController {
                     Color col = pr.getColor(x, y);
                     double rv = col.getRed(), gv = col.getGreen(), bv = col.getBlue();
                     if (isGrayscale) { double gray = (rv + gv + bv) / 3.0; rv = gv = bv = gray; }
-                    pw.setColor(x, y, new Color(Math.min(1.0, Math.max(0.0, rv * c + b)), Math.min(1.0, Math.max(0.0, gv * c + b)), Math.min(1.0, Math.max(0.0, bv * c + b)), col.getOpacity()));
+                    pw.setColor(x, y, new Color(Math.min(1.0, Math.max(0.0, rv * c + b)), Math.min(1.0, Math.max(0.0, gv * c + b)), Math.min(1.0, Math.max(0.0, bv * c + b)), col.getOpacity() * alpha));
                 }
             }
         }

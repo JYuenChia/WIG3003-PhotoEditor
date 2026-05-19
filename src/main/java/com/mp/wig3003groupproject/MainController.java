@@ -10,6 +10,8 @@ import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import java.io.File;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 public class MainController {
 
@@ -43,6 +45,7 @@ public class MainController {
     @FXML private VBox uploadPlaceholder;
 
     // Toolbar
+    @FXML private Button backBtn;
     @FXML private MenuButton darkModeBtn;
     @FXML private TextField searchBar;
     @FXML private BorderPane rootPane;
@@ -55,6 +58,9 @@ public class MainController {
     private boolean darkMode = false;
     private double zoomLevel = 1.0;
     private String currentFileName = "No file";
+    private String currentPane = "dashboard";
+    private final Deque<String> navHistory = new ArrayDeque<>();
+    private boolean skipHistoryPush = false;
 
     private static MainController instance;
     public MainController() { instance = this; }
@@ -117,6 +123,12 @@ public class MainController {
     }
 
     private void switchPane(String name) {
+        if (!skipHistoryPush && !name.equals(currentPane)) {
+            navHistory.push(currentPane);
+        }
+        currentPane = name;
+        if (backBtn != null) backBtn.setDisable(navHistory.isEmpty());
+
         VBox[] allVBoxPanes = { dashboardPane, galleryPane, annotationPane, favoritesPane,
                 objectExtractionPane, mosaicPane, videoCreatorPane, shareContentPane, settingsPane, userProfilePane };
         for (VBox p : allVBoxPanes) { p.setVisible(false); p.setManaged(false); }
@@ -256,6 +268,7 @@ public class MainController {
             sidebarVBox.setStyle("-fx-background-color: #1A2A40; -fx-padding: 10 6; -fx-min-width: " + (sidebarExpanded ? 130 : 52) + "; -fx-pref-width: " + (sidebarExpanded ? 130 : 52) + "; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif;");
             statusBarHBox.setStyle("-fx-background-color: #2A2A3E; -fx-padding: 5 15; -fx-border-color: #3A3A5E; -fx-border-width: 1 0 0 0;");
             darkModeBtn.setText("\u2600  Settings");
+            if (backBtn != null) backBtn.setStyle("-fx-background-color: #3A3A5E; -fx-text-fill: #C0C8E8; -fx-background-radius: 6; -fx-border-color: #3A3A5E; -fx-border-radius: 6; -fx-font-size: 13; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-padding: 6 14;");
         } else {
             // Light mode
             rootPane.setStyle("-fx-background-color: #FFFFFF; -fx-font-family: 'Poppins Regular', 'Poppins', 'Segoe UI', sans-serif;");
@@ -263,6 +276,7 @@ public class MainController {
             sidebarVBox.setStyle("-fx-background-color: #BFDFFF; -fx-padding: 10 6; -fx-min-width: " + (sidebarExpanded ? 130 : 52) + "; -fx-pref-width: " + (sidebarExpanded ? 130 : 52) + "; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif;");
             statusBarHBox.setStyle("-fx-background-color: #BFDFFF; -fx-padding: 5 15; -fx-border-color: #D0E8FF; -fx-border-width: 1 0 0 0;");
             darkModeBtn.setText("\u2699  Settings");
+            if (backBtn != null) backBtn.setStyle("-fx-background-color: #A9D6FF; -fx-text-fill: #4A4A4A; -fx-background-radius: 6; -fx-border-color: #D0E8FF; -fx-border-radius: 6; -fx-font-size: 13; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-padding: 6 14;");
         }
         // Re-apply sidebar button styles with correct colours
         ToggleButton[] allTabs = { tabDashboard, tabGallery, tabDipEditor, tabAnnotation,
@@ -273,8 +287,16 @@ public class MainController {
     }
 
     @FXML public void handleUserProfile() { switchPane("userProfile"); }
-    @FXML public void handleProfileBack()  { switchPane("settings"); }
+    @FXML public void handleProfileBack()  { handleBack(); }
     @FXML public void handleSettings()    { switchPane("settings"); }
+
+    @FXML public void handleBack() {
+        if (!navHistory.isEmpty()) {
+            skipHistoryPush = true;
+            switchPane(navHistory.pop());
+            skipHistoryPush = false;
+        }
+    }
 
     @FXML public void handleSaveProfile() {
         String name = profileNameField.getText().trim();

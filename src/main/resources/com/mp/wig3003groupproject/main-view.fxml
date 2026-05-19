@@ -13,6 +13,10 @@
         <HBox fx:id="toolbarHBox" spacing="2" alignment="CENTER_LEFT"
               style="-fx-background-color: #BFDFFF; -fx-padding: 6 16; -fx-border-color: #D0E8FF; -fx-border-width: 0 0 1 0;">
 
+            <!-- Back button -->
+            <Button fx:id="backBtn" text="◀  Back" onAction="#handleBack" disable="true"
+                    style="-fx-background-color: #A9D6FF; -fx-text-fill: #4A4A4A; -fx-background-radius: 6; -fx-border-color: #D0E8FF; -fx-border-radius: 6; -fx-font-size: 13; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-padding: 6 14;"/>
+
             <!-- File Menu -->
             <MenuButton text="📁  File" style="-fx-background-color: #A9D6FF; -fx-text-fill: #4A4A4A; -fx-background-radius: 6; -fx-border-color: #D0E8FF; -fx-border-radius: 6; -fx-font-size: 13; -fx-font-family: 'Poppins Medium', 'Poppins', 'Segoe UI', sans-serif; -fx-font-weight: bold; -fx-padding: 6 14;">
                 <items>

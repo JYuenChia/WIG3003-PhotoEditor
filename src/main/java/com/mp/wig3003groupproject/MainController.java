@@ -955,7 +955,7 @@ public class MainController {
             StackPane box = new StackPane();
             box.setPrefSize(140, 110);
             box.setStyle("-fx-background-color: #E0E7FF; -fx-background-radius: 10;");
-            Label icon = new Label("▶️");
+            Label icon = new Label("▶");
             icon.setStyle("-fx-font-size: 28; -fx-text-fill: #4F5BD5; -fx-font-weight: bold;");
             box.getChildren().add(icon);
             return box;

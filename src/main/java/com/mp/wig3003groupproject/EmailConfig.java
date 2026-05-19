@@ -1,6 +1,5 @@
 package com.mp.wig3003groupproject;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -17,11 +16,14 @@ public class EmailConfig {
     private static Properties loadConfig() {
         Properties properties = new Properties();
 
-        try (InputStream inputStream = new FileInputStream(CONFIG_FILE)) {
-            properties.load(inputStream);
-            return properties;
+        // Try loading from classpath resources first
+        try (InputStream inputStream = EmailConfig.class.getResourceAsStream("/" + CONFIG_FILE)) {
+            if (inputStream != null) {
+                properties.load(inputStream);
+                return properties;
+            }
         } catch (IOException ignored) {
-            // Fall back to environment variables when the local file is absent.
+            // Continue to environment variables
         }
 
         setIfPresent(properties, "SENDER_EMAIL", System.getenv("SENDER_EMAIL"));

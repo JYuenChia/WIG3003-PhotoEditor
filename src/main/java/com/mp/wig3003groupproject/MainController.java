@@ -1076,34 +1076,22 @@ public class MainController {
         controls.setAlignment(Pos.CENTER_LEFT);
         controls.setStyle("-fx-padding: 10; -fx-background-color: #F1F5F9; -fx-background-radius: 8;");
 
-        Label noteTitle = new Label("Annotation");
-        noteTitle.setStyle("-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #8892B0;");
-        Label noteLabel = new Label(note);
-        noteLabel.setWrapText(true);
-        noteLabel.setStyle("-fx-font-size: 14; -fx-text-fill: #1A1D2E;");
+       Button editBtn = new Button("✎ Edit in Video Tab");
+       editBtn.setStyle("-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-padding: 8 16; -fx-cursor: hand;");
+       editBtn.setOnAction(e -> {
+        mediaPlayer.stop();
+        mediaPlayer.dispose();
+        previewStage.close();
+        setCurrentImagePath(path);
+        setCurrentFileName(new File(path).getName());
+        showVideoCreator();
+        if (VideoController.getInstance() != null) {
+            VideoController.getInstance().handleBackToUpload();
+            VideoController.getInstance().loadVideoDirectly(new File(path));
+        }
+    });
 
-        Button editBtn = new Button("✎ Edit in Video Tab");
-        editBtn.setStyle("-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-padding: 8 16; -fx-cursor: hand;");
-        editBtn.setOnAction(e -> {
-            mediaPlayer.stop();
-            mediaPlayer.dispose();
-            previewStage.close();
-            setCurrentImagePath(path);
-            setCurrentFileName(new File(path).getName());
-            showVideoCreator();
-            if (VideoController.getInstance() != null) {
-                VideoController.getInstance().handleBackToUpload(); // reset first
-                VideoController.getInstance().loadVideoDirectly(new File(path));
-            }
-        });
-
-        HBox titleBox = new HBox(noteTitle, new Region(), editBtn);
-        HBox.setHgrow(titleBox.getChildren().get(1), Priority.ALWAYS);
-
-        VBox textContainer = new VBox(10, titleBox, noteLabel);
-        textContainer.setStyle("-fx-background-color: #F7F8FA; -fx-padding: 16 20; -fx-background-radius: 12; -fx-border-color: #E8EAF0; -fx-border-width: 1; -fx-border-radius: 12;");
-
-        VBox layout = new VBox(20, mediaView, controls, textContainer);
+        VBox layout = new VBox(20, mediaView, controls, editBtn);
         layout.setAlignment(Pos.CENTER);
         layout.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 32;");
 

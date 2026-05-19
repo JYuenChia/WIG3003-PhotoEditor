@@ -17,6 +17,7 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -28,10 +29,18 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
+import javafx.util.Duration;
+import javafx.scene.control.Slider;
 
 public class MainController {
 
@@ -88,19 +97,40 @@ public class MainController {
     private Image currentDisplayedImage;
     private List<String> editedFiles = new ArrayList<>();
     private Properties annotationsDB = new Properties();
-    private static final String DB_FILE = "photo_editor_db.properties";
+    private static final String DB_FILE = "gallery_db.properties";
 
     public void setCurrentImagePath(String path) { this.currentImagePath = path; }
     public void setCurrentFileName(String name) { this.currentFileName = name; }
     public void setCurrentDisplayedImage(Image image) { this.currentDisplayedImage = image; }
     public String getCurrentImagePath() { return this.currentImagePath; }
+    public boolean isSidebarExpanded() { return this.sidebarExpanded; }
 
     @FXML
     public void initialize() {
         ensureGalleryStorage();
         loadDatabase();
-        // applyTheme() should be called after FXML injection is guaranteed.
-        // In most cases, it's safer to use Platform.runLater if rootPane logic is sensitive.
+
+        if (imageScrollPane != null) {
+            imageScrollPane.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+                if (DIPController.getInstance() != null && DIPController.getInstance().isSelectionMode()) {
+                    Image currentImg = mainImageView.getImage();
+                    if (currentImg == null) return;
+
+                    double ratioX = currentImg.getWidth() / mainImageView.getBoundsInLocal().getWidth();
+                    double ratioY = currentImg.getHeight() / mainImageView.getBoundsInLocal().getHeight();
+
+                    double imageClickX = event.getX() - mainImageView.getLayoutX();
+                    double imageClickY = event.getY() - mainImageView.getLayoutY();
+
+                    if (imageClickX >= 0 && imageClickX <= mainImageView.getBoundsInLocal().getWidth() &&
+                            imageClickY >= 0 && imageClickY <= mainImageView.getBoundsInLocal().getHeight()) {
+
+                        DIPController.getInstance().selectSimilarColors(imageClickX * ratioX, imageClickY * ratioY);
+                    }
+                }
+            });
+        }
+
         javafx.application.Platform.runLater(this::applyTheme);
     }
 
@@ -116,12 +146,8 @@ public class MainController {
         if (!navHistory.isEmpty()) {
             String lastPane = navHistory.pop();
             currentPane = lastPane;
-            // Update UI without pushing to history
             updatePaneVisibility(lastPane);
-            
-            // Sync toggle group selection
             syncSidebarSelection(lastPane);
-            
             applyTheme();
         }
     }
@@ -188,6 +214,11 @@ public class MainController {
     public void handleSidebarToggle() {
         sidebarExpanded = !sidebarExpanded;
         applyTheme();
+        
+        // Notify VideoController to update scaling if active
+        if (VideoController.getInstance() != null) {
+            VideoController.getInstance().updateScaling();
+        }
     }
 
     @FXML public void handleOpenImage() {
@@ -196,7 +227,6 @@ public class MainController {
         File file = fc.showOpenDialog(null);
         if (file != null) {
             loadImage(file);
-            // If currently in Mosaic or Extraction tab, stay in that tab
             if (!currentPane.equals("mosaic") && !currentPane.equals("objectExtraction")) {
                 switchPane("dipEditor");
                 tabDipEditor.setSelected(true);
@@ -204,14 +234,17 @@ public class MainController {
         }
     }
 
-    // UPDATED: Now forcefully clears the right-side properties panel
     @FXML public void handleDelete() {
+        if ("videoCreator".equals(currentPane) && VideoController.getInstance() != null) {
+            VideoController.getInstance().handleDelete();
+            return;
+        }
+
         mainImageView.setImage(null);
         currentDisplayedImage = null;
         uploadPlaceholder.setVisible(true);
         imageScrollPane.setVisible(false);
-        
-        // Show upload placeholders for all tabs
+
         if (mosaicUploadPlaceholder != null) mosaicUploadPlaceholder.setVisible(true);
         if (extractionUploadPlaceholder != null) extractionUploadPlaceholder.setVisible(true);
         
@@ -221,8 +254,7 @@ public class MainController {
         if (heartIcon != null) heartIcon.setVisible(false);
         if (annotationBox != null) annotationBox.setVisible(false);
         if (annotationField != null) annotationField.clear();
-        
-        // Clear all controller states
+
         if (DIPController.getInstance() != null) DIPController.getInstance().clearUI();
         if (MosaicController.getInstance() != null) MosaicController.getInstance().clearUI();
         if (ObjectExtractionController.getInstance() != null) ObjectExtractionController.getInstance().clearUI();
@@ -230,8 +262,25 @@ public class MainController {
         updateStatusBar();
     }
 
-    @FXML public void handleUndo() { if (DIPController.getInstance() != null) DIPController.getInstance().undo(); }
-    @FXML public void handleRedo() { if (DIPController.getInstance() != null) DIPController.getInstance().redo(); }
+    @FXML public void handleUndo() {
+        if ("dipEditor".equals(currentPane)) {
+            if (DIPController.getInstance() != null) DIPController.getInstance().undo();
+        } else if ("objectExtraction".equals(currentPane)) {
+            if (ObjectExtractionController.getInstance() != null) ObjectExtractionController.getInstance().undo();
+        } else if ("videoCreator".equals(currentPane)) {
+            if (VideoController.getInstance() != null) VideoController.getInstance().handleUndo();
+        }
+    }
+
+    @FXML public void handleRedo() {
+        if ("dipEditor".equals(currentPane)) {
+            if (DIPController.getInstance() != null) DIPController.getInstance().redo();
+        } else if ("objectExtraction".equals(currentPane)) {
+            if (ObjectExtractionController.getInstance() != null) ObjectExtractionController.getInstance().redo();
+        } else if ("videoCreator".equals(currentPane)) {
+            if (VideoController.getInstance() != null) VideoController.getInstance().handleRedo();
+        }
+    }
 
     @FXML public void handleZoomIn() {
         if ("dipEditor".equals(currentPane)) {
@@ -246,6 +295,8 @@ public class MainController {
             double newZoom = Math.min(ObjectExtractionController.getInstance().getZoomLevel() + 0.25, 5.0);
             ObjectExtractionController.getInstance().setZoomLevel(newZoom);
             zoomLevel = newZoom;
+        } else if ("videoCreator".equals(currentPane) && VideoController.getInstance() != null) {
+            VideoController.getInstance().handleZoomIn();
         }
         statusZoom.setText(String.format("Zoom: %.0f%%", zoomLevel * 100));
     }
@@ -263,15 +314,10 @@ public class MainController {
             double newZoom = Math.max(ObjectExtractionController.getInstance().getZoomLevel() - 0.25, 0.25);
             ObjectExtractionController.getInstance().setZoomLevel(newZoom);
             zoomLevel = newZoom;
+        } else if ("videoCreator".equals(currentPane) && VideoController.getInstance() != null) {
+            VideoController.getInstance().handleZoomOut();
         }
         statusZoom.setText(String.format("Zoom: %.0f%%", zoomLevel * 100));
-    }
-
-    private void copyToClipboard(String text) {
-        javafx.scene.input.Clipboard clipboard = javafx.scene.input.Clipboard.getSystemClipboard();
-        javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
-        content.putString(text);
-        clipboard.setContent(content);
     }
 
     @FXML public void handleShareEmail() { showShareTab(); }
@@ -309,12 +355,8 @@ public class MainController {
     }
 
     public void syncShareState(List<String> files, Properties annotations) {
-        if (files != null) {
-            editedFiles = new ArrayList<>(files);
-        }
-        if (annotations != null) {
-            annotationsDB = annotations;
-        }
+        if (files != null) editedFiles = new ArrayList<>(files);
+        if (annotations != null) annotationsDB = annotations;
         refreshShareGallery();
     }
 
@@ -329,30 +371,20 @@ public class MainController {
     private Node buildSharePreview(File file) {
         if (isVideoFile(file)) {
             StackPane box = new StackPane();
-            box.setPrefSize(40, 40);
-            box.setMinSize(40, 40);
-            box.setMaxSize(40, 40);
+            box.setPrefSize(40, 40); box.setMinSize(40, 40); box.setMaxSize(40, 40);
             box.setStyle("-fx-background-color: #E0E7FF; -fx-background-radius: 8;");
-            Label icon = new Label("▶");
+            Label icon = new Label("▶️");
             icon.setStyle("-fx-text-fill: #4F5BD5; -fx-font-size: 18; -fx-font-weight: bold;");
             box.getChildren().add(icon);
             return box;
         }
 
         ImageView thumb = new ImageView();
-        thumb.setFitHeight(40);
-        thumb.setFitWidth(40);
-        thumb.setPreserveRatio(true);
-        try {
-            thumb.setImage(new Image(file.toURI().toString()));
-        } catch (Exception ex) {
-            // keep placeholder style below
-        }
+        thumb.setFitHeight(40); thumb.setFitWidth(40); thumb.setPreserveRatio(true);
+        try { thumb.setImage(new Image(file.toURI().toString())); } catch (Exception ex) {}
 
         StackPane wrapper = new StackPane(thumb);
-        wrapper.setPrefSize(40, 40);
-        wrapper.setMinSize(40, 40);
-        wrapper.setMaxSize(40, 40);
+        wrapper.setPrefSize(40, 40); wrapper.setMinSize(40, 40); wrapper.setMaxSize(40, 40);
         wrapper.setStyle("-fx-background-color: #F3F4F6; -fx-background-radius: 8;");
         return wrapper;
     }
@@ -383,7 +415,7 @@ public class MainController {
 
         if (btnSendEmail != null) {
             btnSendEmail.setDisable(true);
-            btnSendEmail.setText("⏳ Sending...");
+            btnSendEmail.setText("Sending...");
         }
         emailStatusLabel.setText("");
 
@@ -397,9 +429,9 @@ public class MainController {
                 javafx.application.Platform.runLater(() -> {
                     if (btnSendEmail != null) {
                         btnSendEmail.setDisable(false);
-                        btnSendEmail.setText("🚀 Send with Attachment");
+                        btnSendEmail.setText("Send with Attachment");
                     }
-                    emailStatusLabel.setText("✅ Sent successfully!");
+                    emailStatusLabel.setText("Sent successfully!");
                     emailStatusLabel.setStyle("-fx-text-fill: #10B981;");
                 });
             } catch (Exception e) {
@@ -407,9 +439,9 @@ public class MainController {
                 javafx.application.Platform.runLater(() -> {
                     if (btnSendEmail != null) {
                         btnSendEmail.setDisable(false);
-                        btnSendEmail.setText("🚀 Send again");
+                        btnSendEmail.setText("Send again");
                     }
-                    emailStatusLabel.setText("❌ Failed: " + e.getMessage());
+                    emailStatusLabel.setText("Failed: " + e.getMessage());
                     emailStatusLabel.setStyle("-fx-text-fill: #EF4444;");
                 });
             }
@@ -449,9 +481,8 @@ public class MainController {
         applyTheme();
     }
 
-    // UPDATED: Extremely Deep Dark Mode for much better visual contrast
     private void applyTheme() {
-        if (rootPane == null) return; // Prevent NPE if called prematurely
+        if (rootPane == null) return; 
         String sidebarW = sidebarExpanded ? "220" : "60";
         
         if (darkMode) {
@@ -459,8 +490,7 @@ public class MainController {
             if (toolbarHBox != null) toolbarHBox.setStyle("-fx-background-color: #12141D; -fx-padding: 10 20; -fx-border-color: #1F2332; -fx-border-width: 0 0 1 0;");
             if (sidebarVBox != null) sidebarVBox.setStyle("-fx-background-color: #12141D; -fx-padding: 16 10; -fx-min-width: " + sidebarW + "; -fx-pref-width: " + sidebarW + "; -fx-border-color: #1F2332; -fx-border-width: 0 1 0 0;");
             if (statusBarHBox != null) statusBarHBox.setStyle("-fx-background-color: #12141D; -fx-padding: 6 20; -fx-border-color: #1F2332; -fx-border-width: 1 0 0 0;");
-            
-            // Plunge the central workspaces into darkness
+
             if(mainContentStackPane != null) mainContentStackPane.setStyle("-fx-background-color: #090A0F;");
             if(dipWorkspaceBg != null) dipWorkspaceBg.setStyle("-fx-background-color: #090A0F;");
             if(extractionWorkspaceBg != null) extractionWorkspaceBg.setStyle("-fx-background-color: #090A0F;");
@@ -473,7 +503,6 @@ public class MainController {
             if(mosaicImageScrollPane != null) mosaicImageScrollPane.setStyle("-fx-background: #090A0F; -fx-background-color: #090A0F; -fx-border-color: transparent;");
             if(annotationBox != null) annotationBox.setStyle("-fx-background-color: #12141D; -fx-padding: 14 20; -fx-border-color: #1F2332; -fx-border-width: 1 0 0 0;");
 
-            // Pop the text color for readability
             if(brandLabel != null) brandLabel.setStyle("-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #E2E8F0;");
             
             String darkBtn = "-fx-background-color: transparent; -fx-text-fill: #E2E8F0; -fx-font-size: 13; -fx-font-weight: bold; -fx-cursor: hand;";
@@ -611,17 +640,13 @@ public class MainController {
 
         uploadPlaceholder.setVisible(false);
         imageScrollPane.setVisible(true);
-        
-        // Hide upload placeholders for all tabs
+
         if (mosaicUploadPlaceholder != null) mosaicUploadPlaceholder.setVisible(false);
         if (extractionUploadPlaceholder != null) extractionUploadPlaceholder.setVisible(false);
         
         currentFileName = file.getName();
 
-        // Notify all controllers about the loaded image
         if (DIPController.getInstance() != null) DIPController.getInstance().onImageLoaded(image);
-        if (MosaicController.getInstance() != null) MosaicController.getInstance().onImageLoaded(image);
-        if (ObjectExtractionController.getInstance() != null) ObjectExtractionController.getInstance().onImageLoaded(image);
         updateStatusBar();
 
         if (annotationBox != null) { annotationBox.setVisible(true); annotationBox.setManaged(true); }
@@ -656,8 +681,22 @@ public class MainController {
             e.printStackTrace();
             showSimpleWarning("Save Error", "Could not write the edited file: " + e.getMessage());
         }
+    }
 
-        // Keep the current media visible after saving to gallery.
+    public File saveFileToGallery(File sourceFile) throws IOException {
+        ensureGalleryStorage();
+        File galleryDir = getGalleryDirectory();
+        
+        String ext = "";
+        int i = sourceFile.getName().lastIndexOf('.');
+        if (i > 0) ext = sourceFile.getName().substring(i);
+        
+        File target = new File(galleryDir, "video_" + System.currentTimeMillis() + ext);
+        Files.copy(sourceFile.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        
+        updateSavedMediaState(target, true);
+        syncSharePane();
+        return target;
     }
 
     public void checkAnnotationAndHeart() {
@@ -764,8 +803,16 @@ public class MainController {
         return target;
     }
 
+    // 💡 THE CRITICAL BUG FIX IS HERE: Grab mainImageView.getImage() instead of the unedited source!
     private File saveDisplayedImageToTarget(File requestedTarget, boolean recordInGallery) throws IOException {
-        Image imageToSave = currentDisplayedImage != null ? currentDisplayedImage : (mainImageView != null ? mainImageView.getImage() : null);
+        
+        Image imageToSave = null;
+        if (mainImageView != null && mainImageView.getImage() != null) {
+            imageToSave = mainImageView.getImage(); // Grab the filtered/edited pixels!
+        } else if (currentDisplayedImage != null) {
+            imageToSave = currentDisplayedImage; // Fallback
+        }
+        
         if (imageToSave == null) {
             throw new IOException("No edited image is currently displayed.");
         }
@@ -774,6 +821,11 @@ public class MainController {
         ImageIO.write(SwingFXUtils.fromFXImage(imageToSave, null), "png", target);
         updateSavedMediaState(target, recordInGallery);
         return target;
+    }
+
+    public void updateSavedMediaStateExternal(File savedFile) throws IOException {
+        updateSavedMediaState(savedFile, true);
+        syncSharePane();
     }
 
     private void updateSavedMediaState(File savedFile, boolean recordInGallery) throws IOException {
@@ -792,23 +844,21 @@ public class MainController {
         return parent == null ? new File(name + extension) : new File(parent, name + extension);
     }
 
-    // Helper method for MosaicController and ObjectExtractionController to save images
     public void saveImageToGallery(Image image, String prefix) {
         try {
             ensureGalleryStorage();
             File galleryDir = getGalleryDirectory();
             File target = new File(galleryDir, prefix + "_" + System.currentTimeMillis() + ".png");
             ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", target);
-            
-            // Add to gallery tracking
+
             String targetPath = target.getAbsolutePath();
             if (!editedFiles.contains(targetPath)) {
                 editedFiles.add(0, targetPath);
             }
             saveDatabase();
-            refreshGallery(""); // Refresh gallery display
-            syncSharePane(); // Refresh share pane
-            
+            refreshGallery(""); 
+            syncSharePane(); 
+
             showSimpleInfo("Saved", "✅ Saved to gallery: " + target.getName());
             System.out.println("Saved successfully to: " + target.getAbsolutePath());
         } catch (Exception e) {
@@ -818,7 +868,7 @@ public class MainController {
     }
 
     // --- Gallery Logic ---
-    private void refreshGallery(String filter) {
+    public void refreshGallery(String filter) {
         galleryGrid.getChildren().clear();
         for (String path : editedFiles) {
             File f = new File(path);
@@ -838,7 +888,9 @@ public class MainController {
                 h.setStyle("-fx-text-fill: #F38BA8; -fx-font-size: 18;");
                 StackPane.setAlignment(h, Pos.TOP_RIGHT);
                 imgStack.getChildren().addAll(preview, h);
-            } else imgStack.getChildren().add(preview);
+            } else {
+                imgStack.getChildren().add(preview);
+            }
 
             Label name = new Label(f.getName());
             name.setStyle("-fx-font-size: 11; -fx-text-fill: #1A1D2E; -fx-font-weight: bold;");
@@ -847,15 +899,13 @@ public class MainController {
             card.getChildren().addAll(imgStack, name);
             card.setCursor(javafx.scene.Cursor.HAND);
             card.setOnMouseClicked(e -> {
-                if (isVideoFile(f)) {
-                    setCurrentImagePath(f.getAbsolutePath());
-                    setCurrentFileName(f.getName());
-                    showVideoCreator();
-                    return;
+                if (e.getClickCount() == 2) {
+                    if (isVideoFile(f)) {
+                        showVideoPreviewPopup(path, annotationsDB.getProperty(hash, "No annotation provided."));
+                        return;
+                    }
+                    showPreviewPopup(path, annotationsDB.getProperty(hash, "No annotation provided."));
                 }
-                loadImage(f);
-                switchPane("dipEditor");
-                tabDipEditor.setSelected(true);
             });
             galleryGrid.getChildren().add(card);
         }
@@ -866,7 +916,7 @@ public class MainController {
             StackPane box = new StackPane();
             box.setPrefSize(140, 110);
             box.setStyle("-fx-background-color: #E0E7FF; -fx-background-radius: 10;");
-            Label icon = new Label("▶");
+            Label icon = new Label("▶️");
             icon.setStyle("-fx-font-size: 28; -fx-text-fill: #4F5BD5; -fx-font-weight: bold;");
             box.getChildren().add(icon);
             return box;
@@ -879,7 +929,159 @@ public class MainController {
         return iv;
     }
 
-    // --- Data Accessors for Sub-Controllers ---
+    private void showPreviewPopup(String path, String note) {
+        Stage previewStage = new Stage();
+        previewStage.setTitle("Preview — " + new File(path).getName());
+        ImageView previewView = new ImageView(new Image(new File(path).toURI().toString()));
+        previewView.setPreserveRatio(true);
+        previewView.setFitWidth(720);
+        previewView.setFitHeight(520);
+        previewView.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 24, 0, 0, 6);");
+
+        Label noteTitle = new Label("Annotation");
+        noteTitle.setStyle("-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #8892B0;");
+        Label noteLabel = new Label(note);
+        noteLabel.setWrapText(true);
+        noteLabel.setStyle("-fx-font-size: 14; -fx-text-fill: #1A1D2E;");
+        
+        Button editBtn = new Button("✎ Edit Image");
+        editBtn.setStyle("-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-padding: 8 16; -fx-cursor: hand;");
+        editBtn.setOnAction(e -> {
+            previewStage.close();
+            loadImage(new File(path));
+            switchPane("dipEditor");
+            tabDipEditor.setSelected(true);
+        });
+
+        HBox titleBox = new HBox(noteTitle, new Region(), editBtn);
+        HBox.setHgrow(titleBox.getChildren().get(1), Priority.ALWAYS);
+
+        VBox textContainer = new VBox(10, titleBox, noteLabel);
+        textContainer.setStyle("-fx-background-color: #F7F8FA; -fx-padding: 16 20; -fx-background-radius: 12; -fx-border-color: #E8EAF0; -fx-border-width: 1; -fx-border-radius: 12;");
+        
+        VBox layout = new VBox(20, previewView, textContainer);
+        layout.setAlignment(Pos.CENTER);
+        layout.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 32;");
+
+        previewStage.setScene(new Scene(layout));
+        previewStage.show();
+    }
+
+    private void showVideoPreviewPopup(String path, String note) {
+        Stage previewStage = new Stage();
+        previewStage.setTitle("Video Preview — " + new File(path).getName());
+
+        Media media = new Media(new File(path).toURI().toString());
+        MediaPlayer mediaPlayer = new MediaPlayer(media);
+        MediaView mediaView = new MediaView(mediaPlayer);
+        mediaView.setPreserveRatio(true);
+        mediaView.setFitWidth(720);
+        mediaView.setFitHeight(400);
+
+        // Control Buttons
+        Button playBtn = new Button("▶ Play");
+        playBtn.setStyle("-fx-background-color: #10B981; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-padding: 8 16; -fx-cursor: hand;");
+        playBtn.setOnAction(e -> {
+            if (mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
+                mediaPlayer.pause();
+                playBtn.setText("▶ Play");
+            } else {
+                mediaPlayer.play();
+                playBtn.setText("⏸ Pause");
+            }
+        });
+
+        Button stopBtn = new Button("⏹ Stop");
+        stopBtn.setStyle("-fx-background-color: #EF4444; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-padding: 8 16; -fx-cursor: hand;");
+        stopBtn.setOnAction(e -> {
+            mediaPlayer.stop();
+            playBtn.setText("▶ Play");
+        });
+
+        // SeekBar
+        Slider videoSeekBar = new Slider();
+        videoSeekBar.setMin(0);
+        videoSeekBar.setMax(100);
+        HBox.setHgrow(videoSeekBar, Priority.ALWAYS);
+
+        mediaPlayer.currentTimeProperty().addListener((obs, oldTime, newTime) -> {
+            if (!videoSeekBar.isValueChanging()) {
+                double total = mediaPlayer.getTotalDuration().toSeconds();
+                if (total > 0) {
+                    videoSeekBar.setValue((newTime.toSeconds() / total) * 100);
+                }
+            }
+        });
+
+        videoSeekBar.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (videoSeekBar.isValueChanging()) {
+                double total = mediaPlayer.getTotalDuration().toSeconds();
+                if (total > 0) {
+                    mediaPlayer.seek(Duration.seconds((newVal.doubleValue() / 100.0) * total));
+                }
+            }
+        });
+        
+        videoSeekBar.setOnMouseClicked(event -> {
+            double mouseX = event.getX();
+            double width = videoSeekBar.getWidth();
+            double percentage = (mouseX / width) * 100.0;
+            videoSeekBar.setValue(percentage);
+            double total = mediaPlayer.getTotalDuration().toSeconds();
+            if (total > 0) {
+                mediaPlayer.seek(Duration.seconds((percentage / 100.0) * total));
+            }
+        });
+
+        HBox controls = new HBox(12, playBtn, stopBtn, videoSeekBar);
+        controls.setAlignment(Pos.CENTER_LEFT);
+        controls.setStyle("-fx-padding: 10; -fx-background-color: #F1F5F9; -fx-background-radius: 8;");
+
+        Label noteTitle = new Label("Annotation");
+        noteTitle.setStyle("-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #8892B0;");
+        Label noteLabel = new Label(note);
+        noteLabel.setWrapText(true);
+        noteLabel.setStyle("-fx-font-size: 14; -fx-text-fill: #1A1D2E;");
+
+        Button editBtn = new Button("✎ Edit in Video Tab");
+        editBtn.setStyle("-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-padding: 8 16; -fx-cursor: hand;");
+        editBtn.setOnAction(e -> {
+            mediaPlayer.stop();
+            mediaPlayer.dispose();
+            previewStage.close();
+            setCurrentImagePath(path);
+            setCurrentFileName(new File(path).getName());
+            showVideoCreator();
+            if (VideoController.getInstance() != null) {
+                VideoController.getInstance().handleBackToUpload(); // reset first
+                VideoController.getInstance().loadVideoDirectly(new File(path));
+            }
+        });
+
+        HBox titleBox = new HBox(noteTitle, new Region(), editBtn);
+        HBox.setHgrow(titleBox.getChildren().get(1), Priority.ALWAYS);
+
+        VBox textContainer = new VBox(10, titleBox, noteLabel);
+        textContainer.setStyle("-fx-background-color: #F7F8FA; -fx-padding: 16 20; -fx-background-radius: 12; -fx-border-color: #E8EAF0; -fx-border-width: 1; -fx-border-radius: 12;");
+
+        VBox layout = new VBox(20, mediaView, controls, textContainer);
+        layout.setAlignment(Pos.CENTER);
+        layout.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 32;");
+
+        previewStage.setScene(new Scene(layout));
+        previewStage.setOnCloseRequest(e -> {
+            mediaPlayer.stop();
+            mediaPlayer.dispose();
+        });
+        
+        mediaPlayer.setOnReady(() -> {
+            mediaPlayer.play();
+            playBtn.setText("⏸ Pause");
+        });
+        
+        previewStage.show();
+    }
+
     public List<String> getEditedFiles() { return editedFiles; }
     public Properties getAnnotationsDB() { return annotationsDB; }
     public ImageView getImageView() { return mainImageView; }

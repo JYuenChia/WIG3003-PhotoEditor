@@ -5,6 +5,8 @@ module com.mp.wig3003groupproject {
     requires javafx.swing;
     requires javafx.media;
     requires jakarta.mail;
+    requires org.bytedeco.javacv;
+    requires org.bytedeco.ffmpeg;
 
     opens com.mp.wig3003groupproject to javafx.fxml;
     exports com.mp.wig3003groupproject;

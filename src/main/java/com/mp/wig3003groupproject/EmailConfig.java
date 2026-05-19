@@ -6,7 +6,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 public class EmailConfig {
-    private static final String CONFIG_FILE = "email-config.properties";
+    private static final String CONFIG_FILE = "email_configuration.example";
     private static final Properties CONFIG = loadConfig();
 
     public static final String SENDER_EMAIL = getConfigValue("SENDER_EMAIL");
@@ -24,10 +24,10 @@ public class EmailConfig {
             // Fall back to environment variables when the local file is absent.
         }
 
-        setIfPresent(properties, "SENDER_EMAIL", System.getenv("PHOTO_EDITOR_SENDER_EMAIL"));
-        setIfPresent(properties, "APP_PASSWORD", System.getenv("PHOTO_EDITOR_APP_PASSWORD"));
-        setIfPresent(properties, "SMTP_HOST", System.getenv("PHOTO_EDITOR_SMTP_HOST"));
-        setIfPresent(properties, "SMTP_PORT", System.getenv("PHOTO_EDITOR_SMTP_PORT"));
+        setIfPresent(properties, "SENDER_EMAIL", System.getenv("SENDER_EMAIL"));
+        setIfPresent(properties, "APP_PASSWORD", System.getenv("APP_PASSWORD"));
+        setIfPresent(properties, "SMTP_HOST", System.getenv("SMTP_HOST"));
+        setIfPresent(properties, "SMTP_PORT", System.getenv("SMTP_PORT"));
         return properties;
     }
 

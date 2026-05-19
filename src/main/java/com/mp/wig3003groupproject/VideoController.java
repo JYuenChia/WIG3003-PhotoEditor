@@ -731,6 +731,12 @@ public class VideoController {
                 .add(new javafx.stage.FileChooser.ExtensionFilter("Video Files", "*.mp4", "*.mkv", "*.avi"));
         File file = fc.showOpenDialog(null);
         if (file != null) {
+            loadVideoDirectly(file);
+        }
+    }
+
+    public void loadVideoDirectly(File file) {
+        if (file != null) {
             MainController.getInstance().setCurrentImagePath(file.getAbsolutePath());
             MainController.getInstance().setCurrentFileName(file.getName());
             isVideoMode = true;

@@ -37,6 +37,11 @@ import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
+import javafx.util.Duration;
+import javafx.scene.control.Slider;
 
 public class MainController {
 
@@ -880,9 +885,7 @@ public class MainController {
             card.setOnMouseClicked(e -> {
                 if (e.getClickCount() == 2) {
                     if (isVideoFile(f)) {
-                        setCurrentImagePath(f.getAbsolutePath());
-                        setCurrentFileName(f.getName());
-                        showVideoCreator();
+                        showVideoPreviewPopup(path, annotationsDB.getProperty(hash, "No annotation provided."));
                         return;
                     }
                     showPreviewPopup(path, annotationsDB.getProperty(hash, "No annotation provided."));
@@ -945,6 +948,121 @@ public class MainController {
         layout.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 32;");
 
         previewStage.setScene(new Scene(layout));
+        previewStage.show();
+    }
+
+    private void showVideoPreviewPopup(String path, String note) {
+        Stage previewStage = new Stage();
+        previewStage.setTitle("Video Preview — " + new File(path).getName());
+
+        Media media = new Media(new File(path).toURI().toString());
+        MediaPlayer mediaPlayer = new MediaPlayer(media);
+        MediaView mediaView = new MediaView(mediaPlayer);
+        mediaView.setPreserveRatio(true);
+        mediaView.setFitWidth(720);
+        mediaView.setFitHeight(400);
+
+        // Control Buttons
+        Button playBtn = new Button("▶ Play");
+        playBtn.setStyle("-fx-background-color: #10B981; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-padding: 8 16; -fx-cursor: hand;");
+        playBtn.setOnAction(e -> {
+            if (mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
+                mediaPlayer.pause();
+                playBtn.setText("▶ Play");
+            } else {
+                mediaPlayer.play();
+                playBtn.setText("⏸ Pause");
+            }
+        });
+
+        Button stopBtn = new Button("⏹ Stop");
+        stopBtn.setStyle("-fx-background-color: #EF4444; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-padding: 8 16; -fx-cursor: hand;");
+        stopBtn.setOnAction(e -> {
+            mediaPlayer.stop();
+            playBtn.setText("▶ Play");
+        });
+
+        // SeekBar
+        Slider videoSeekBar = new Slider();
+        videoSeekBar.setMin(0);
+        videoSeekBar.setMax(100);
+        HBox.setHgrow(videoSeekBar, Priority.ALWAYS);
+
+        mediaPlayer.currentTimeProperty().addListener((obs, oldTime, newTime) -> {
+            if (!videoSeekBar.isValueChanging()) {
+                double total = mediaPlayer.getTotalDuration().toSeconds();
+                if (total > 0) {
+                    videoSeekBar.setValue((newTime.toSeconds() / total) * 100);
+                }
+            }
+        });
+
+        videoSeekBar.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (videoSeekBar.isValueChanging()) {
+                double total = mediaPlayer.getTotalDuration().toSeconds();
+                if (total > 0) {
+                    mediaPlayer.seek(Duration.seconds((newVal.doubleValue() / 100.0) * total));
+                }
+            }
+        });
+        
+        videoSeekBar.setOnMouseClicked(event -> {
+            double mouseX = event.getX();
+            double width = videoSeekBar.getWidth();
+            double percentage = (mouseX / width) * 100.0;
+            videoSeekBar.setValue(percentage);
+            double total = mediaPlayer.getTotalDuration().toSeconds();
+            if (total > 0) {
+                mediaPlayer.seek(Duration.seconds((percentage / 100.0) * total));
+            }
+        });
+
+        HBox controls = new HBox(12, playBtn, stopBtn, videoSeekBar);
+        controls.setAlignment(Pos.CENTER_LEFT);
+        controls.setStyle("-fx-padding: 10; -fx-background-color: #F1F5F9; -fx-background-radius: 8;");
+
+        Label noteTitle = new Label("Annotation");
+        noteTitle.setStyle("-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #8892B0;");
+        Label noteLabel = new Label(note);
+        noteLabel.setWrapText(true);
+        noteLabel.setStyle("-fx-font-size: 14; -fx-text-fill: #1A1D2E;");
+
+        Button editBtn = new Button("✎ Edit in Video Tab");
+        editBtn.setStyle("-fx-background-color: #4F5BD5; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-padding: 8 16; -fx-cursor: hand;");
+        editBtn.setOnAction(e -> {
+            mediaPlayer.stop();
+            mediaPlayer.dispose();
+            previewStage.close();
+            setCurrentImagePath(path);
+            setCurrentFileName(new File(path).getName());
+            showVideoCreator();
+            if (VideoController.getInstance() != null) {
+                VideoController.getInstance().handleBackToUpload(); // reset first
+                VideoController.getInstance().loadVideoDirectly(new File(path));
+            }
+        });
+
+        HBox titleBox = new HBox(noteTitle, new Region(), editBtn);
+        HBox.setHgrow(titleBox.getChildren().get(1), Priority.ALWAYS);
+
+        VBox textContainer = new VBox(10, titleBox, noteLabel);
+        textContainer.setStyle("-fx-background-color: #F7F8FA; -fx-padding: 16 20; -fx-background-radius: 12; -fx-border-color: #E8EAF0; -fx-border-width: 1; -fx-border-radius: 12;");
+
+        VBox layout = new VBox(20, mediaView, controls, textContainer);
+        layout.setAlignment(Pos.CENTER);
+        layout.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 32;");
+
+        previewStage.setScene(new Scene(layout));
+        previewStage.setOnCloseRequest(e -> {
+            mediaPlayer.stop();
+            mediaPlayer.dispose();
+        });
+        
+        mediaPlayer.setOnReady(() -> {
+            mediaPlayer.play();
+            playBtn.setText("⏸ Pause");
+        });
+        
         previewStage.show();
     }
 

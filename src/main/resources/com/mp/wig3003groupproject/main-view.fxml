@@ -240,13 +240,9 @@
                                            style="-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 30, 0, 0, 8);"/>
                             </StackPane>
                         </ScrollPane>
-                        <VBox fx:id="extractionUploadPlaceholder" alignment="CENTER" spacing="16"
-                              style="-fx-background-color: #F0F2F8;">
-                            <Button onAction="#handleOpenImage"
-                                    style="-fx-background-color: #FFFFFF; -fx-background-radius: 20; -fx-min-width: 140; -fx-min-height: 140; -fx-font-size: 50; -fx-text-fill: #4F5BD5; -fx-cursor: hand; -fx-border-color: #D8DEFF; -fx-border-width: 2; -fx-border-radius: 20; -fx-effect: dropshadow(gaussian,rgba(79,91,213,0.12),16,0,0,4);"
-                                    text="+"/>
-                            <Label text="Drop an image or click +" style="-fx-font-size: 15; -fx-text-fill: #8892B0; -fx-font-weight: bold;"/>
-                            <Label text="PNG · JPG · BMP · GIF" style="-fx-font-size: 12; -fx-text-fill: #B0BAD4;"/>
+                        <VBox fx:id="extractionUploadPlaceholder" alignment="CENTER" spacing="16" style="-fx-background-color: #F0F2F8;">
+                            <Label text="➔" style="-fx-font-size: 50; -fx-text-fill: #4F5BD5;"/>
+                            <Label text="Please use 'Load Image' on the right panel" style="-fx-font-size: 15; -fx-text-fill: #8892B0; -fx-font-weight: bold;"/>
                         </VBox>
                     </StackPane>
                 </VBox>
@@ -264,13 +260,9 @@
                                            style="-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 30, 0, 0, 8);"/>
                             </StackPane>
                         </ScrollPane>
-                        <VBox fx:id="mosaicUploadPlaceholder" alignment="CENTER" spacing="16"
-                              style="-fx-background-color: #F0F2F8;">
-                            <Button onAction="#handleOpenImage"
-                                    style="-fx-background-color: #FFFFFF; -fx-background-radius: 20; -fx-min-width: 140; -fx-min-height: 140; -fx-font-size: 50; -fx-text-fill: #4F5BD5; -fx-cursor: hand; -fx-border-color: #D8DEFF; -fx-border-width: 2; -fx-border-radius: 20; -fx-effect: dropshadow(gaussian,rgba(79,91,213,0.12),16,0,0,4);"
-                                    text="+"/>
-                            <Label text="Drop an image or click +" style="-fx-font-size: 15; -fx-text-fill: #8892B0; -fx-font-weight: bold;"/>
-                            <Label text="PNG · JPG · BMP · GIF" style="-fx-font-size: 12; -fx-text-fill: #B0BAD4;"/>
+                        <VBox fx:id="mosaicUploadPlaceholder" alignment="CENTER" spacing="16" style="-fx-background-color: #F0F2F8;">
+                            <Label text="➔" style="-fx-font-size: 50; -fx-text-fill: #4F5BD5;"/>
+                            <Label text="Please use 'Load Base Image' on the right panel" style="-fx-font-size: 15; -fx-text-fill: #8892B0; -fx-font-weight: bold;"/>
                         </VBox>
                     </StackPane>
                 </VBox>

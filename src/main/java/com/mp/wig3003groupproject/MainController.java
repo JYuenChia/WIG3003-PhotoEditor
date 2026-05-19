@@ -131,6 +131,28 @@ public class MainController {
             });
         }
 
+        if (extractionImageView != null && extractionImageScrollPane != null) {
+            extractionImageView.fitWidthProperty().bind(extractionImageScrollPane.widthProperty().subtract(40));
+            extractionImageView.fitHeightProperty().bind(extractionImageScrollPane.heightProperty().subtract(40));
+    
+            if (extractionUploadPlaceholder != null) {
+                extractionImageView.imageProperty().addListener((obs, oldImg, newImg) -> {
+                    extractionUploadPlaceholder.setVisible(newImg == null);
+                });
+            }
+        }
+        
+        if (mosaicImageView != null && mosaicImageScrollPane != null) {
+            mosaicImageView.fitWidthProperty().bind(mosaicImageScrollPane.widthProperty().subtract(40));
+            mosaicImageView.fitHeightProperty().bind(mosaicImageScrollPane.heightProperty().subtract(40));
+            
+            if (mosaicUploadPlaceholder != null) {
+                mosaicImageView.imageProperty().addListener((obs, oldImg, newImg) -> {
+                    mosaicUploadPlaceholder.setVisible(newImg == null);
+                });
+            }
+        }
+
         javafx.application.Platform.runLater(this::applyTheme);
     }
 
